@@ -1,0 +1,221 @@
+import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+import Stripe from 'stripe'
+import { stripe } from '@/lib/stripe'
+import { prisma } from '@/lib/prisma'
+
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+export async function POST(req: Request) {
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set')
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
+
+  const body = await req.text()
+  const headersList = headers()
+  const signature = headersList.get('stripe-signature')
+
+  if (!signature) {
+    return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
+  }
+
+  let event: Stripe.Event
+
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err)
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        await handleCheckoutCompleted(event.data.object)
+        break
+      }
+
+      case 'customer.subscription.updated': {
+        await handleSubscriptionUpdated(event.data.object)
+        break
+      }
+
+      case 'customer.subscription.deleted': {
+        await handleSubscriptionDeleted(event.data.object)
+        break
+      }
+
+      case 'invoice.payment_failed': {
+        await handlePaymentFailed(event.data.object)
+        break
+      }
+
+      default:
+        // Unhandled event types are ignored
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (error) {
+    console.error('Error processing webhook:', error)
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId
+  const tierId = session.metadata?.tierId
+  const stripeSubscriptionId = session.subscription as string
+
+  if (!userId || !tierId || !stripeSubscriptionId) {
+    console.error('Missing metadata in checkout session:', session.id)
+    return
+  }
+
+  // Get the Stripe subscription with items to get period dates (now on items in new API)
+  const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId, {
+    expand: ['items.data'],
+  })
+
+  // Period dates are now on subscription items in the new Stripe API
+  const firstItem = stripeSubscription.items.data[0]
+  const currentPeriodStart = new Date(firstItem.current_period_start * 1000)
+  const currentPeriodEnd = new Date(firstItem.current_period_end * 1000)
+
+  // 31-day access: set expiry to period end (Stripe handles the 31 days via billing cycle)
+  const accessExpiresAt = currentPeriodEnd
+
+  // Create or update subscription in database
+  await prisma.subscription.upsert({
+    where: {
+      userId_tierId: {
+        userId,
+        tierId,
+      },
+    },
+    update: {
+      stripeSubscriptionId,
+      status: 'ACTIVE',
+      currentPeriodStart,
+      currentPeriodEnd,
+      accessExpiresAt,
+      cancelledAt: null,
+    },
+    create: {
+      userId,
+      tierId,
+      stripeSubscriptionId,
+      status: 'ACTIVE',
+      currentPeriodStart,
+      currentPeriodEnd,
+      accessExpiresAt,
+    },
+  })
+
+  console.log(`Subscription created for user ${userId} to tier ${tierId}`)
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const userId = subscription.metadata?.userId
+  const tierId = subscription.metadata?.tierId
+
+  if (!userId || !tierId) {
+    console.error('Missing metadata in subscription:', subscription.id)
+    return
+  }
+
+  // Period dates are now on subscription items in the new Stripe API
+  const firstItem = subscription.items.data[0]
+  const currentPeriodStart = new Date(firstItem.current_period_start * 1000)
+  const currentPeriodEnd = new Date(firstItem.current_period_end * 1000)
+
+  // Determine status
+  let status: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'PAUSED' = 'ACTIVE'
+  if (subscription.status === 'past_due') {
+    status = 'PAST_DUE'
+  } else if (subscription.status === 'canceled') {
+    status = 'CANCELLED'
+  } else if (subscription.status === 'paused') {
+    status = 'PAUSED'
+  }
+
+  // If cancelled, maintain access until period end (31-day logic)
+  const cancelledAt = subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null
+  const accessExpiresAt = currentPeriodEnd
+
+  await prisma.subscription.update({
+    where: {
+      userId_tierId: {
+        userId,
+        tierId,
+      },
+    },
+    data: {
+      status,
+      currentPeriodStart,
+      currentPeriodEnd,
+      accessExpiresAt,
+      cancelledAt,
+    },
+  })
+
+  console.log(`Subscription updated for user ${userId}: status=${status}`)
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const userId = subscription.metadata?.userId
+  const tierId = subscription.metadata?.tierId
+
+  if (!userId || !tierId) {
+    console.error('Missing metadata in subscription:', subscription.id)
+    return
+  }
+
+  // Keep the subscription record but mark as cancelled
+  // Access continues until accessExpiresAt (which was set to period end)
+  await prisma.subscription.update({
+    where: {
+      userId_tierId: {
+        userId,
+        tierId,
+      },
+    },
+    data: {
+      status: 'CANCELLED',
+      cancelledAt: new Date(),
+    },
+  })
+
+  console.log(`Subscription deleted for user ${userId}`)
+}
+
+async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  // In the new Stripe API, subscription info is in parent.subscription_details
+  const subscriptionDetails = invoice.parent?.subscription_details
+  if (!subscriptionDetails) {
+    return
+  }
+
+  const stripeSubscription = subscriptionDetails.subscription
+  const subscriptionId = typeof stripeSubscription === 'string'
+    ? stripeSubscription
+    : stripeSubscription?.id
+
+  if (!subscriptionId) {
+    return
+  }
+
+  // Find subscription by Stripe ID
+  const subscription = await prisma.subscription.findFirst({
+    where: { stripeSubscriptionId: subscriptionId },
+  })
+
+  if (subscription) {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: 'PAST_DUE' },
+    })
+
+    console.log(`Payment failed for subscription ${subscription.id}`)
+  }
+}

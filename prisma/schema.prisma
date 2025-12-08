@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// USER & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  stripeCustomerId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  vendor        Vendor?
+  subscriptions Subscription[]
+  addresses     Address[]
+  interests     UserInterest[]
+  giveawayEntries GiveawayEntry[]
+  notificationPreferences NotificationPreference?
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label     String  // "Home", "Work", etc.
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  postalCode String
+  country   String
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model UserInterest {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  interest  String // e.g., "sneakers", "electronics", "fashion"
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, interest])
+  @@index([interest])
+}
+
+model NotificationPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emailDrops     Boolean @default(true)
+  emailGiveaways Boolean @default(true)
+  pushDrops      Boolean @default(true)
+  pushGiveaways  Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// VENDOR & STOREFRONT
+// ============================================================================
+
+model Vendor {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Storefront customization
+  storeName   String  @unique
+  slug        String  @unique // URL-friendly identifier
+  description String?
+  logoUrl     String?
+  bannerUrl   String?
+  accentColor String? // Hex color for branding
+
+  stripeAccountId String? @unique // Stripe Connect account
+
+  // Approval workflow
+  status       VendorStatus @default(PENDING)
+  appliedAt    DateTime     @default(now())
+  reviewedAt   DateTime?
+  reviewedBy   String?      // Admin user ID who reviewed
+  rejectionReason String?
+
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tiers       SubscriptionTier[]
+  products    Product[]
+  giveaways   Giveaway[]
+  promoCodes  PromoCode[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================================================
+// SUBSCRIPTION TIERS & SUBSCRIPTIONS
+// ============================================================================
+
+model SubscriptionTier {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  priceInCents Int    // Monthly price in cents
+  stripePriceId String? @unique // Stripe Price ID
+
+  // Tier benefits/features (JSON for flexibility)
+  benefits String[] // Array of benefit descriptions
+
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  subscriptions Subscription[]
+  productAccess ProductTierAccess[]
+  giveaways     Giveaway[] // Giveaways restricted to this tier
+
+  @@unique([vendorId, name])
+  @@index([vendorId])
+}
+
+model Subscription {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tierId String
+  tier   SubscriptionTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+
+  stripeSubscriptionId String? @unique
+
+  status    SubscriptionStatus @default(ACTIVE)
+
+  // 31-day access logic: even if cancelled, access continues until this date
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  accessExpiresAt    DateTime // Set to currentPeriodEnd + any grace period
+
+  cancelledAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, tierId])
+  @@index([userId])
+  @@index([tierId])
+  @@index([accessExpiresAt])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  PAUSED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ============================================================================
+// PRODUCTS & INVENTORY
+// ============================================================================
+
+model Product {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  priceInCents Int
+
+  // Inventory
+  stockQuantity Int     @default(0)
+  isLimited     Boolean @default(false) // For drops/limited releases
+
+  // Media
+  images    String[] // Array of image URLs
+
+  // Visibility
+  isActive  Boolean @default(true)
+  isDrop    Boolean @default(false) // Special drop item
+  dropDate  DateTime? // When the drop goes live
+
+  stripeProductId String? @unique
+  stripePriceId   String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tierAccess ProductTierAccess[]
+
+  @@index([vendorId])
+  @@index([isActive, isDrop])
+  @@index([dropDate])
+}
+
+// Which tiers can access which products (empty = all tiers)
+model ProductTierAccess {
+  id        String @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tierId    String
+  tier      SubscriptionTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, tierId])
+  @@index([productId])
+  @@index([tierId])
+}
+
+// ============================================================================
+// GIVEAWAYS
+// ============================================================================
+
+model Giveaway {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // Optional tier restriction (null = open to all subscribers)
+  restrictedToTierId String?
+  restrictedToTier   SubscriptionTier? @relation(fields: [restrictedToTierId], references: [id], onDelete: SetNull)
+
+  name        String
+  description String?
+  prize       String // What's being given away
+  imageUrl    String?
+
+  startsAt  DateTime
+  endsAt    DateTime
+  winnerId  String? // Set when winner is drawn
+
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  entries GiveawayEntry[]
+
+  @@index([vendorId])
+  @@index([endsAt])
+  @@index([isActive, startsAt, endsAt])
+}
+
+model GiveawayEntry {
+  id         String @id @default(cuid())
+  giveawayId String
+  giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([giveawayId, userId])
+  @@index([giveawayId])
+  @@index([userId])
+}
+
+// ============================================================================
+// PROMO CODES
+// ============================================================================
+
+model PromoCode {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  code        String
+  description String?
+
+  // Discount configuration
+  discountType   DiscountType
+  discountValue  Int // Percentage (0-100) or cents off
+
+  // Restrictions
+  appliesToTierId String? // Null = applies to all tiers
+  maxUses         Int?    // Null = unlimited
+  currentUses     Int     @default(0)
+
+  startsAt  DateTime?
+  expiresAt DateTime?
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vendorId, code])
+  @@index([vendorId])
+  @@index([code])
+}
