@@ -72,9 +72,34 @@ export async function POST(req: Request) {
     }
 
     // Check if product has Stripe price
-    if (!product.stripePriceId) {
-      console.error('Product missing stripePriceId:', product.id)
+    if (!product.stripePriceId || !product.stripeProductId) {
+      console.error('Product missing Stripe IDs:', product.id)
       return NextResponse.json({ error: 'Product not configured for purchase' }, { status: 400 })
+    }
+
+    // Ensure Stripe product is active
+    const stripeProduct = await stripe.products.retrieve(product.stripeProductId)
+    if (!stripeProduct.active) {
+      await stripe.products.update(product.stripeProductId, { active: true })
+    }
+
+    // Ensure Stripe price is active, create new one if not
+    const stripePrice = await stripe.prices.retrieve(product.stripePriceId)
+    let activePriceId = product.stripePriceId
+
+    if (!stripePrice.active) {
+      const newPrice = await stripe.prices.create({
+        product: product.stripeProductId,
+        unit_amount: product.priceInCents,
+        currency: 'usd',
+      })
+      activePriceId = newPrice.id
+
+      // Update the product with the new price ID
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { stripePriceId: newPrice.id },
+      })
     }
 
     // Ensure user has a Stripe customer ID
@@ -104,7 +129,7 @@ export async function POST(req: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: product.stripePriceId,
+          price: activePriceId,
           quantity: 1,
         },
       ],
