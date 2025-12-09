@@ -42,8 +42,10 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Edit existing tiers
 - [x] Vendor profile/storefront customization (logo, banner, colors)
 - [x] Product management (CRUD)
-- [ ] Basic analytics (subscriber count, revenue)
-- [ ] Order management for vendors
+- [x] Order management for vendors (with filtering/sorting)
+- [x] Shipments management (awaiting/shipped tabs)
+- [x] Subscriber management (view, cancel, report)
+- [ ] Basic analytics (subscriber count, revenue charts)
 
 ## Priority 5: Subscriber Experience
 
@@ -51,6 +53,7 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] View subscriptions dashboard
 - [x] View vendor inventory (gated by subscription)
 - [x] Purchase products
+- [x] Upgrade/downgrade subscription tiers
 - [ ] Order history page
 - [ ] Notification preferences
 - [ ] Giveaway entry system

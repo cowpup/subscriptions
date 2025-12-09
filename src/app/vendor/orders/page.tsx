@@ -7,6 +7,8 @@ import { getVendorByUserId } from '@/lib/vendor'
 import { prisma } from '@/lib/prisma'
 import { formatAmountForDisplay } from '@/lib/stripe'
 import { OrderStatusSelect } from './order-status-select'
+import { OrderFilters } from './order-filters'
+import { Prisma } from '@prisma/client'
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -18,7 +20,22 @@ const statusColors: Record<string, string> = {
   REFUNDED: 'bg-gray-100 text-gray-800',
 }
 
-export default async function VendorOrdersPage() {
+interface PageProps {
+  searchParams: Promise<{
+    sort?: string
+    order?: string
+    status?: string
+    search?: string
+  }>
+}
+
+export default async function VendorOrdersPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const sort = params.sort ?? 'date'
+  const order = params.order ?? 'desc'
+  const statusFilter = params.status ?? ''
+  const search = params.search ?? ''
+
   const user = await getCurrentUser()
 
   if (!user) {
@@ -31,9 +48,34 @@ export default async function VendorOrdersPage() {
     redirect('/vendor')
   }
 
+  // Build where clause
+  const where: Prisma.OrderWhereInput = { vendorId: vendor.id }
+
+  if (statusFilter) {
+    where.status = statusFilter as Prisma.EnumOrderStatusFilter
+  }
+
+  if (search) {
+    where.OR = [
+      { id: { contains: search, mode: 'insensitive' } },
+      { user: { name: { contains: search, mode: 'insensitive' } } },
+      { user: { email: { contains: search, mode: 'insensitive' } } },
+    ]
+  }
+
+  // Build orderBy clause
+  let orderBy: Prisma.OrderOrderByWithRelationInput = { createdAt: 'desc' }
+  if (sort === 'date') {
+    orderBy = { createdAt: order as Prisma.SortOrder }
+  } else if (sort === 'total') {
+    orderBy = { totalInCents: order as Prisma.SortOrder }
+  } else if (sort === 'customer') {
+    orderBy = { user: { name: order as Prisma.SortOrder } }
+  }
+
   const orders = await prisma.order.findMany({
-    where: { vendorId: vendor.id },
-    orderBy: { createdAt: 'desc' },
+    where,
+    orderBy,
     include: {
       user: {
         select: { name: true, email: true },
@@ -96,8 +138,28 @@ export default async function VendorOrdersPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <h1 className="text-2xl font-bold">Orders</h1>
-        <p className="mt-1 text-gray-600">Manage and fulfill customer orders</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Orders</h1>
+            <p className="mt-1 text-gray-600">Manage and fulfill customer orders</p>
+          </div>
+          <Link
+            href="/vendor/shipments"
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          >
+            View Shipments
+          </Link>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-6">
+          <OrderFilters
+            currentSort={sort}
+            currentOrder={order}
+            currentStatus={statusFilter}
+            currentSearch={search}
+          />
+        </div>
 
         {/* Order Stats */}
         <div className="mt-6 grid gap-4 sm:grid-cols-4">

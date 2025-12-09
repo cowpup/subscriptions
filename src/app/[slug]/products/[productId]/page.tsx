@@ -131,12 +131,12 @@ export default async function ProductPage({ params }: PageProps) {
           {/* Product Image */}
           <div className="rounded-lg border bg-white overflow-hidden">
             {product.images.length > 0 ? (
-              <div className="relative aspect-square">
+              <div className="relative aspect-square bg-gray-100">
                 <Image
                   src={product.images[0]}
                   alt={product.name}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
             ) : (

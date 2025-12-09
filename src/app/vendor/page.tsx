@@ -44,6 +44,9 @@ export default async function VendorDashboardPage() {
               <Link href="/vendor/orders" className="text-gray-600 hover:text-black">
                 Orders
               </Link>
+              <Link href="/vendor/subscribers" className="text-gray-600 hover:text-black">
+                Subscribers
+              </Link>
               <Link href="/vendor/tiers" className="text-gray-600 hover:text-black">
                 Tiers
               </Link>

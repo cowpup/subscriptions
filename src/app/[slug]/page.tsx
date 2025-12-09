@@ -7,15 +7,17 @@ import { formatAmountForDisplay } from '@/lib/stripe'
 import { getCurrentUser } from '@/lib/auth'
 import { getSubscriptionForVendor } from '@/lib/subscription'
 import { SubscribeButton } from './subscribe-button'
+import { ChangeTierButton } from './change-tier-button'
+import { VendorAvatarWithBadge } from '@/components/ui/vendor-badge'
 
 interface PageProps {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ canceled?: string; success?: string }>
+  searchParams: Promise<{ canceled?: string; success?: string; upgraded?: string }>
 }
 
 export default async function VendorStorefrontPage({ params, searchParams }: PageProps) {
   const { slug } = await params
-  const { canceled } = await searchParams
+  const { canceled, upgraded } = await searchParams
 
   const vendor = await prisma.vendor.findUnique({
     where: { slug },
@@ -111,22 +113,21 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
           </div>
         )}
 
+        {upgraded && (
+          <div className="mb-6 rounded-md bg-green-50 p-4 text-sm text-green-800">
+            Your subscription has been upgraded successfully!
+          </div>
+        )}
+
         {/* Compact Vendor Header */}
         <div className="flex items-center justify-between rounded-lg border bg-white p-4">
           <div className="flex items-center gap-3">
-            {vendor.logoUrl ? (
-              <Image
-                src={vendor.logoUrl}
-                alt={vendor.storeName}
-                width={48}
-                height={48}
-                className="rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-xl font-bold text-gray-600">
-                {vendor.storeName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <VendorAvatarWithBadge
+              avatarUrl={vendor.logoUrl}
+              name={vendor.storeName}
+              size="md"
+              showBadge={true}
+            />
             <div>
               <h1 className="text-xl font-bold">{vendor.storeName}</h1>
               {vendor.description && (
@@ -160,12 +161,12 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                     className="group rounded-lg border bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {product.images.length > 0 ? (
-                      <div className="relative h-40 w-full">
+                      <div className="relative h-40 w-full bg-gray-100">
                         <Image
                           src={product.images[0]}
                           alt={product.name}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform"
+                          className="object-contain group-hover:scale-105 transition-transform"
                         />
                       </div>
                     ) : (
@@ -290,6 +291,10 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
               {vendor.tiers.map((tier, index) => {
                 const isCurrentTier = existingSubscription?.tierId === tier.id
                 const isUpgrade = hasActiveSubscription && index > currentTierIndex
+                const isDowngrade = hasActiveSubscription && !isCurrentTier && index < currentTierIndex
+                const daysRemaining = existingSubscription?.accessExpiresAt
+                  ? Math.max(0, Math.ceil((existingSubscription.accessExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                  : 0
 
                 return (
                   <div
@@ -308,6 +313,11 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                       {isUpgrade && (
                         <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs text-white">
                           Upgrade
+                        </span>
+                      )}
+                      {isDowngrade && (
+                        <span className="rounded-full bg-gray-500 px-2 py-0.5 text-xs text-white">
+                          Downgrade
                         </span>
                       )}
                     </div>
@@ -341,13 +351,16 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                           >
                             Current Plan
                           </button>
-                        ) : hasActiveSubscription ? (
-                          <button
-                            disabled
-                            className="w-full rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-500"
-                          >
-                            Contact to Change
-                          </button>
+                        ) : hasActiveSubscription && existingSubscription ? (
+                          <ChangeTierButton
+                            currentSubscriptionId={existingSubscription.id}
+                            newTierId={tier.id}
+                            newTierName={tier.name}
+                            newTierPrice={formatAmountForDisplay(tier.priceInCents)}
+                            isUpgrade={isUpgrade ?? false}
+                            daysRemaining={daysRemaining}
+                            currentTierName={existingSubscription.tier.name}
+                          />
                         ) : (
                           <SubscribeButton tierId={tier.id} />
                         )}

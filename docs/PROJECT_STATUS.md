@@ -7,12 +7,11 @@
 
 ## Current State
 
-**Product purchase flow complete.** Subscribers can view and purchase products from vendors. Orders tracked in database with stock management for limited products. Live at subr.net.
+**Vendor management features complete.** Full order management, shipment tracking, and subscriber management for vendors. Subscription tier upgrades/downgrades functional. Live at subr.net.
 
 ## In Progress
 
-- Basic analytics for vendors
-- Order management pages
+- Basic analytics for vendors (subscriber count, revenue charts)
 
 ## Recently Completed
 
@@ -65,12 +64,26 @@
 - Webhook handling for purchase completion
 - Stock management for limited products
 
+### Vendor Management (NEW)
+- Orders page with sorting/filtering by date, total, customer, status
+- Shipments page with Awaiting/Shipped tabs
+- Subscribers page with management actions
+- Vendor can cancel subscriber subscriptions
+- Vendor can report abusive users
+- Subscription tier changes (upgrade/downgrade)
+- Verified vendor badge on storefronts
+
+### UI/UX Improvements
+- Product card images now fit uncropped (object-contain)
+- Vendor Hub button in header for approved vendors
+- Header component with conditional vendor link
+
 ## Upcoming Priorities
 
-1. Basic analytics for vendors (subscriber count, revenue)
-2. Order management for vendors
-3. Order history for subscribers
-4. Giveaway system
+1. Basic analytics for vendors (subscriber count, revenue charts)
+2. Order history for subscribers
+3. Giveaway system
+4. Email notifications
 
 ## Key Routes
 
@@ -80,6 +93,7 @@
 | `/sign-in`, `/sign-up` | Authentication |
 | `/dashboard` | User dashboard |
 | `/dashboard/subscriptions` | Active subscriptions with cancel |
+| `/dashboard/orders` | Subscriber order history |
 | `/dashboard/become-creator` | Vendor application |
 | `/vendor` | Vendor dashboard |
 | `/vendor/tiers` | Manage subscription tiers |
@@ -88,6 +102,9 @@
 | `/vendor/products` | Manage products |
 | `/vendor/products/new` | Create new product |
 | `/vendor/products/[id]` | Edit existing product |
+| `/vendor/orders` | Order management with filters |
+| `/vendor/shipments` | Shipment tracking (awaiting/shipped) |
+| `/vendor/subscribers` | Subscriber management |
 | `/vendor/settings` | Storefront customization |
 | `/admin` | Admin dashboard |
 | `/admin/vendors` | Review vendor applications |

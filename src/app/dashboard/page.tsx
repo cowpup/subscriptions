@@ -1,24 +1,27 @@
 import { currentUser } from '@clerk/nextjs/server'
-import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
+import { Header } from '@/components/layout/header'
+import { getCurrentUser } from '@/lib/auth'
+import { getVendorByUserId } from '@/lib/vendor'
 
 export default async function DashboardPage() {
-  const user = await currentUser()
+  const clerkUser = await currentUser()
+  const user = await getCurrentUser()
+  let vendor = null
+
+  if (user) {
+    vendor = await getVendorByUserId(user.id)
+  }
+
+  const isApprovedVendor = vendor?.status === 'APPROVED'
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-xl font-bold">
-            subr.net
-          </Link>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <h1 className="text-2xl font-bold">Welcome, {user?.firstName ?? 'there'}!</h1>
-        <p className="mt-2 text-gray-600">This is your dashboard. More features coming soon.</p>
+        <h1 className="text-2xl font-bold">Welcome, {clerkUser?.firstName ?? 'there'}!</h1>
+        <p className="mt-2 text-gray-600">This is your dashboard.</p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <DashboardCard
@@ -27,15 +30,22 @@ export default async function DashboardPage() {
             href="/dashboard/subscriptions"
           />
           <DashboardCard
+            title="My Orders"
+            description="Track your purchases and order history"
+            href="/dashboard/orders"
+          />
+          <DashboardCard
             title="Browse Creators"
             description="Discover new creators to subscribe to"
             href="/creators"
           />
-          <DashboardCard
-            title="Become a Creator"
-            description="Start your own subscription storefront"
-            href="/dashboard/become-creator"
-          />
+          {!isApprovedVendor && (
+            <DashboardCard
+              title="Become a Creator"
+              description="Start your own subscription storefront"
+              href="/dashboard/become-creator"
+            />
+          )}
         </div>
       </main>
     </div>

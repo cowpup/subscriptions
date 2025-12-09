@@ -99,12 +99,12 @@ export default async function VendorProductsPage() {
                 className="rounded-lg border bg-white shadow-sm overflow-hidden"
               >
                 {product.images.length > 0 ? (
-                  <div className="relative h-48 w-full">
+                  <div className="relative h-48 w-full bg-gray-100">
                     <Image
                       src={product.images[0]}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                     />
                   </div>
                 ) : (
