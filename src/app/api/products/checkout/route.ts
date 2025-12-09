@@ -71,6 +71,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Product out of stock' }, { status: 400 })
     }
 
+    // Check if product has Stripe price
+    if (!product.stripePriceId) {
+      console.error('Product missing stripePriceId:', product.id)
+      return NextResponse.json({ error: 'Product not configured for purchase' }, { status: 400 })
+    }
+
     // Ensure user has a Stripe customer ID
     let stripeCustomerId = user.stripeCustomerId
 
@@ -115,6 +121,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error) {
     console.error('Error creating product checkout:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: `Checkout failed: ${message}` }, { status: 500 })
   }
 }
