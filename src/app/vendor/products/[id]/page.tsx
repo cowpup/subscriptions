@@ -61,6 +61,9 @@ export default async function EditProductPage({ params }: PageProps) {
               <Link href="/vendor/products" className="font-medium text-black">
                 Products
               </Link>
+              <Link href="/vendor/orders" className="text-gray-600 hover:text-black">
+                Orders
+              </Link>
               <Link href="/vendor/tiers" className="text-gray-600 hover:text-black">
                 Tiers
               </Link>

@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { UploadButton } from '@/lib/uploadthing'
 
 interface Tier {
   id: string
@@ -31,6 +33,41 @@ export default function NewProductPage() {
   const [tiers, setTiers] = useState<Tier[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+
+  const handleUrlUpload = async () => {
+    if (!urlInput.trim()) {
+      return
+    }
+
+    setIsUploading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/upload/from-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlInput.trim(), type: 'product' }),
+      })
+
+      const data = await response.json() as { url?: string; error?: string }
+
+      if (!response.ok) {
+        setError(data.error ?? 'Failed to upload image')
+        setIsUploading(false)
+        return
+      }
+
+      if (data.url) {
+        setImageUrl(data.url)
+        setUrlInput('')
+      }
+    } catch {
+      setError('Failed to upload image from URL')
+    }
+    setIsUploading(false)
+  }
 
   useEffect(() => {
     async function loadTiers() {
@@ -188,17 +225,72 @@ export default function NewProductPage() {
             </div>
 
             <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-                Image URL
+              <label className="block text-sm font-medium text-gray-700">
+                Product Image
               </label>
-              <input
-                type="url"
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/product.jpg"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-              />
+
+              {imageUrl ? (
+                <div className="mt-2">
+                  <div className="relative h-48 w-48 rounded-lg overflow-hidden border">
+                    <Image
+                      src={imageUrl}
+                      alt="Product preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Remove image
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2">
+                  <UploadButton
+                    endpoint="productImage"
+                    onUploadBegin={() => setIsUploading(true)}
+                    onClientUploadComplete={(res) => {
+                      setIsUploading(false)
+                      if (res?.[0]?.url) {
+                        setImageUrl(res[0].url)
+                      }
+                    }}
+                    onUploadError={(error: Error) => {
+                      setIsUploading(false)
+                      setError(`Upload failed: ${error.message}`)
+                    }}
+                    appearance={{
+                      button: 'bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 text-sm',
+                      allowedContent: 'text-xs text-gray-500',
+                    }}
+                  />
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs text-gray-500 mb-2">
+                      Or paste an image URL (will be uploaded to our servers):
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="https://example.com/product.jpg"
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleUrlUpload()}
+                        disabled={isUploading || !urlInput.trim()}
+                        className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                      >
+                        {isUploading ? 'Uploading...' : 'Upload'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -243,10 +335,10 @@ export default function NewProductPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || !name.trim() || !price}
+              disabled={isSubmitting || isUploading || !name.trim() || !price}
               className="w-full rounded-md bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : 'Create Product'}
+              {isSubmitting ? 'Creating...' : isUploading ? 'Uploading...' : 'Create Product'}
             </button>
           </form>
         </div>

@@ -48,6 +48,9 @@ export default async function VendorTiersPage() {
               <Link href="/vendor/products" className="text-gray-600 hover:text-black">
                 Products
               </Link>
+              <Link href="/vendor/orders" className="text-gray-600 hover:text-black">
+                Orders
+              </Link>
               <Link href="/vendor/tiers" className="font-medium text-black">
                 Tiers
               </Link>
