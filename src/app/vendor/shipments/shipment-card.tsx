@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { formatAmountForDisplay } from '@/lib/stripe'
+import { formatAmountForDisplay } from '@/lib/format'
 
 interface OrderItem {
   id: string
