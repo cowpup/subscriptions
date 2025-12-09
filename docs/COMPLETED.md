@@ -96,3 +96,22 @@ Tasks moved here from TODO.md upon completion.
 - **Rebrand to subr.net**
   - Replaced all SubscribeX/FannaEx references
   - Updated package name and branding throughout
+
+- **Product purchase flow**
+  - Subscribers can view products on vendor storefronts
+  - Products filtered by tier access
+  - Stripe checkout for one-time purchases
+  - Order record created on purchase completion
+  - Stock management for limited products
+  - See agent log: `docs/agent-logs/product-purchase-flow-2025-12-08.md`
+
+- **UI Fixes and Vendor Hub Enhancements** (Commit: 54ec630)
+  - Fixed product card images to display uncropped (object-contain)
+  - Subscription tier upgrade/downgrade functionality
+  - Vendor Hub button in header for approved vendors
+  - Verified vendor badge (green checkmark) on storefronts
+  - Vendor Orders page with sorting/filtering/search
+  - Vendor Shipments page with Awaiting/Shipped tabs
+  - Vendor Subscribers page with cancel/report actions
+  - Reusable Header and VendorBadge components
+  - See agent log: `docs/agent-logs/ui-fixes-vendor-hub-2025-12-08.md`
