@@ -47,7 +47,7 @@ export default async function EditTierPage({ params }: PageProps) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="text-xl font-bold">
-              SubscribeX
+              subr.net
             </Link>
             <nav className="hidden items-center gap-4 text-sm md:flex">
               <Link href="/vendor" className="text-gray-600 hover:text-black">

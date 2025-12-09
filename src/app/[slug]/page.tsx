@@ -51,7 +51,7 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <Link href="/" className="text-xl font-bold">
-            SubscribeX
+            subr.net
           </Link>
           <div className="flex items-center gap-4">
             <SignedIn>

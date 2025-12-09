@@ -6,7 +6,7 @@ import '@/styles/globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SubscribeX',
+  title: 'subr.net',
   description: 'Creator-centric subscription marketplace',
 }
 

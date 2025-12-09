@@ -23,7 +23,7 @@ export default async function AdminDashboardPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="text-xl font-bold">
-              SubscribeX
+              subr.net
             </Link>
             <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
               Admin

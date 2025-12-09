@@ -79,7 +79,7 @@ export default function BecomeCreatorPage() {
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <Link href="/" className="text-xl font-bold">
-            SubscribeX
+            subr.net
           </Link>
           <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
             Back to Dashboard
