@@ -34,7 +34,7 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Configure STRIPE_WEBHOOK_SECRET in production
 - [x] Test complete checkout flow end-to-end
 - [x] Add subscription cancellation UI for subscribers
-- [ ] One-time product purchase flow
+- [x] One-time product purchase flow
 
 ## Priority 4: Vendor Dashboard
 
@@ -43,13 +43,15 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Vendor profile/storefront customization (logo, banner, colors)
 - [x] Product management (CRUD)
 - [ ] Basic analytics (subscriber count, revenue)
+- [ ] Order management for vendors
 
 ## Priority 5: Subscriber Experience
 
 - [x] Browse vendor storefronts
 - [x] View subscriptions dashboard
-- [ ] View vendor inventory (gated by subscription)
-- [ ] Purchase products
+- [x] View vendor inventory (gated by subscription)
+- [x] Purchase products
+- [ ] Order history page
 - [ ] Notification preferences
 - [ ] Giveaway entry system
 

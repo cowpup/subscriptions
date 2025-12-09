@@ -7,12 +7,12 @@
 
 ## Current State
 
-**Vendor dashboard feature-complete.** Vendors can manage subscription tiers, products, and storefront settings. Subscribers can view and cancel subscriptions. Live at subr.net.
+**Product purchase flow complete.** Subscribers can view and purchase products from vendors. Orders tracked in database with stock management for limited products. Live at subr.net.
 
 ## In Progress
 
-- Product purchase flow for subscribers
-- Subscriber view of vendor inventory
+- Basic analytics for vendors
+- Order management pages
 
 ## Recently Completed
 
@@ -56,12 +56,20 @@
 - Browse vendor storefronts
 - View active subscriptions
 - Cancel subscriptions (maintains 31-day access)
+- View and purchase products (subscription-gated)
+- Tier-based product access
+
+### Orders System
+- Order and OrderItem models
+- Product checkout with Stripe
+- Webhook handling for purchase completion
+- Stock management for limited products
 
 ## Upcoming Priorities
 
-1. Product purchase flow (one-time purchases)
-2. Subscriber view of vendor inventory (gated by subscription)
-3. Basic analytics for vendors
+1. Basic analytics for vendors (subscriber count, revenue)
+2. Order management for vendors
+3. Order history for subscribers
 4. Giveaway system
 
 ## Key Routes
@@ -84,6 +92,7 @@
 | `/admin` | Admin dashboard |
 | `/admin/vendors` | Review vendor applications |
 | `/{slug}` | Public vendor storefront |
+| `/{slug}/products/[id]` | Product detail page (subscriber-only) |
 
 ## Environment Setup
 
