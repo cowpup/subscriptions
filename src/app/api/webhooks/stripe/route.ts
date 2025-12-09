@@ -158,15 +158,19 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
   let shippingAddressId: string | null = null
 
   if (shippingDetails?.address) {
+    // Normalize address fields for comparison and storage
+    const normalizedState = (shippingDetails.address.state ?? '').toUpperCase()
+    const normalizedCountry = (shippingDetails.address.country ?? 'US').toUpperCase()
+
     // Save or find existing address for the user
     const existingAddress = await prisma.address.findFirst({
       where: {
         userId,
         line1: shippingDetails.address.line1 ?? '',
         city: shippingDetails.address.city ?? '',
-        state: shippingDetails.address.state ?? '',
+        state: normalizedState,
         postalCode: shippingDetails.address.postal_code ?? '',
-        country: shippingDetails.address.country ?? '',
+        country: normalizedCountry,
       },
     })
 
@@ -183,9 +187,9 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
           line1: shippingDetails.address.line1 ?? '',
           line2: shippingDetails.address.line2 ?? null,
           city: shippingDetails.address.city ?? '',
-          state: (shippingDetails.address.state ?? '').toUpperCase(),
+          state: normalizedState,
           postalCode: shippingDetails.address.postal_code ?? '',
-          country: (shippingDetails.address.country ?? 'US').toUpperCase(),
+          country: normalizedCountry,
           isDefault: addressCount === 0, // Make default if first address
         },
       })

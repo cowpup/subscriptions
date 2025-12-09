@@ -78,6 +78,7 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
   const [showShippingForm, setShowShippingForm] = useState(false)
+  const [showAddressForm, setShowAddressForm] = useState(false)
   const [showRates, setShowRates] = useState(false)
   const [rates, setRates] = useState<ShippingRate[]>([])
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null)
@@ -88,6 +89,15 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
   const [lengthIn, setLengthIn] = useState(order.lengthIn?.toString() ?? '')
   const [widthIn, setWidthIn] = useState(order.widthIn?.toString() ?? '')
   const [heightIn, setHeightIn] = useState(order.heightIn?.toString() ?? '')
+
+  // Manual address form
+  const [addrName, setAddrName] = useState('')
+  const [addrLine1, setAddrLine1] = useState('')
+  const [addrLine2, setAddrLine2] = useState('')
+  const [addrCity, setAddrCity] = useState('')
+  const [addrState, setAddrState] = useState('')
+  const [addrPostalCode, setAddrPostalCode] = useState('')
+  const [addrCountry, setAddrCountry] = useState('US')
 
   const updateStatus = async (newStatus: string) => {
     setIsUpdating(true)
@@ -187,6 +197,47 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
     setIsUpdating(false)
   }
 
+  const saveAddress = async () => {
+    if (!addrName || !addrLine1 || !addrCity || !addrState || !addrPostalCode) {
+      setError('Please fill in all required address fields')
+      return
+    }
+
+    setIsUpdating(true)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/vendor/orders/${order.id}/address`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addrName,
+          line1: addrLine1,
+          line2: addrLine2 || null,
+          city: addrCity,
+          state: addrState,
+          postalCode: addrPostalCode,
+          country: addrCountry,
+        }),
+      })
+
+      const data = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        setError(data.error ?? 'Failed to save address')
+        setIsUpdating(false)
+        return
+      }
+
+      setShowAddressForm(false)
+      router.refresh()
+    } catch {
+      setError('Failed to save address')
+    }
+
+    setIsUpdating(false)
+  }
+
   const isAwaiting = order.status === 'PAID' || order.status === 'PROCESSING'
 
   return (
@@ -240,7 +291,7 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
             <p className="mt-1 text-sm font-medium">{order.user.name || 'No name'}</p>
             <p className="text-sm text-gray-500">{order.user.email}</p>
 
-            {order.shippingAddress && (
+            {order.shippingAddress ? (
               <div className="mt-2 text-sm text-gray-600">
                 <p>{order.shippingAddress.name}</p>
                 <p>{order.shippingAddress.line1}</p>
@@ -250,6 +301,19 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
                   {order.shippingAddress.postalCode}
                 </p>
                 <p>{order.shippingAddress.country}</p>
+              </div>
+            ) : (
+              <div className="mt-2 rounded-md bg-yellow-50 border border-yellow-200 p-2">
+                <p className="text-xs font-medium text-yellow-800">No shipping address</p>
+                <p className="text-xs text-yellow-700">
+                  Contact customer at {order.user.email} for shipping details
+                </p>
+                <button
+                  onClick={() => setShowAddressForm(true)}
+                  className="mt-2 text-xs font-medium text-yellow-900 underline hover:no-underline"
+                >
+                  Add address manually
+                </button>
               </div>
             )}
 
@@ -315,6 +379,104 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
         {error && (
           <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {/* Manual Address Form */}
+        {showAddressForm && (
+          <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+            <h4 className="text-sm font-medium text-gray-700">Add Shipping Address</h4>
+            <div className="mt-3 grid gap-3">
+              <div>
+                <label className="block text-xs text-gray-600">Full Name *</label>
+                <input
+                  type="text"
+                  value={addrName}
+                  onChange={(e) => setAddrName(e.target.value)}
+                  placeholder="John Doe"
+                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Street Address *</label>
+                <input
+                  type="text"
+                  value={addrLine1}
+                  onChange={(e) => setAddrLine1(e.target.value)}
+                  placeholder="123 Main St"
+                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Apt, Suite, etc.</label>
+                <input
+                  type="text"
+                  value={addrLine2}
+                  onChange={(e) => setAddrLine2(e.target.value)}
+                  placeholder="Apt 4B"
+                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs text-gray-600">City *</label>
+                  <input
+                    type="text"
+                    value={addrCity}
+                    onChange={(e) => setAddrCity(e.target.value)}
+                    placeholder="San Francisco"
+                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">State *</label>
+                  <input
+                    type="text"
+                    value={addrState}
+                    onChange={(e) => setAddrState(e.target.value)}
+                    placeholder="CA"
+                    maxLength={2}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">ZIP *</label>
+                  <input
+                    type="text"
+                    value={addrPostalCode}
+                    onChange={(e) => setAddrPostalCode(e.target.value)}
+                    placeholder="94102"
+                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">Country</label>
+                  <select
+                    value={addrCountry}
+                    onChange={(e) => setAddrCountry(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  >
+                    <option value="US">US</option>
+                    <option value="CA">CA</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => void saveAddress()}
+                disabled={isUpdating}
+                className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+              >
+                {isUpdating ? 'Saving...' : 'Save Address'}
+              </button>
+              <button
+                onClick={() => setShowAddressForm(false)}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
@@ -453,7 +615,7 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
         )}
 
         {/* Actions */}
-        {!showShippingForm && !showRates && (
+        {!showShippingForm && !showRates && !showAddressForm && (
           <div className="mt-4 pt-4 border-t">
             {isAwaiting ? (
               <div className="flex flex-wrap items-center gap-3">
@@ -467,7 +629,7 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
                   </button>
                 )}
 
-                {!order.trackingNumber && (
+                {!order.trackingNumber && order.shippingAddress && (
                   <button
                     onClick={() => setShowShippingForm(true)}
                     disabled={isUpdating}
@@ -475,6 +637,12 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
                   >
                     Create Shipping Label
                   </button>
+                )}
+
+                {!order.trackingNumber && !order.shippingAddress && (
+                  <span className="text-sm text-yellow-700">
+                    Shipping address required to create label
+                  </span>
                 )}
 
                 {order.trackingNumber && (
