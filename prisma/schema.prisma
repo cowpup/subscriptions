@@ -29,6 +29,7 @@ model User {
   interests     UserInterest[]
   giveawayEntries GiveawayEntry[]
   notificationPreferences NotificationPreference?
+  orders        Order[]
 }
 
 model Address {
@@ -47,6 +48,8 @@ model Address {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orders Order[]
 
   @@index([userId])
 }
@@ -112,6 +115,7 @@ model Vendor {
   products    Product[]
   giveaways   Giveaway[]
   promoCodes  PromoCode[]
+  orders      Order[]
 
   @@index([slug])
   @@index([status])
@@ -225,6 +229,7 @@ model Product {
 
   // Relations
   tierAccess ProductTierAccess[]
+  orderItems OrderItem[]
 
   @@index([vendorId])
   @@index([isActive, isDrop])
@@ -323,4 +328,60 @@ model PromoCode {
   @@unique([vendorId, code])
   @@index([vendorId])
   @@index([code])
+}
+
+// ============================================================================
+// ORDERS
+// ============================================================================
+
+model Order {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  status OrderStatus @default(PENDING)
+
+  totalInCents          Int
+  stripePaymentIntentId String? @unique
+
+  shippingAddressId String?
+  shippingAddress   Address? @relation(fields: [shippingAddressId], references: [id])
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([vendorId])
+  @@index([status])
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity     Int
+  priceInCents Int
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
 }

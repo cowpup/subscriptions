@@ -27,6 +27,13 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
       },
+      products: {
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          tierAccess: true,
+        },
+      },
     },
   })
 
@@ -203,6 +210,99 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Products Section - Visible to subscribers */}
+        {hasActiveSubscription && vendor.products.length > 0 && (
+          <>
+            <h2 className="mt-10 text-xl font-bold">Products</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Exclusive products available to subscribers
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {vendor.products
+                .filter((product) => {
+                  // If product has no tier restrictions, show to all subscribers
+                  if (product.tierAccess.length === 0) {
+                    return true
+                  }
+                  // If product has tier restrictions, check if user's tier has access
+                  return product.tierAccess.some(
+                    (ta) => ta.tierId === existingSubscription?.tierId
+                  )
+                })
+                .map((product) => (
+                  <div
+                    key={product.id}
+                    className="rounded-lg border bg-white shadow-sm overflow-hidden"
+                  >
+                    {product.images.length > 0 ? (
+                      <div className="relative h-48 w-full">
+                        <Image
+                          src={product.images[0]}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-48 items-center justify-center bg-gray-100">
+                        <span className="text-4xl text-gray-400">📦</span>
+                      </div>
+                    )}
+
+                    <div className="p-4">
+                      <h3 className="font-semibold">{product.name}</h3>
+                      <p className="mt-1 text-lg font-bold">
+                        {formatAmountForDisplay(product.priceInCents)}
+                      </p>
+
+                      {product.description && (
+                        <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                          {product.description}
+                        </p>
+                      )}
+
+                      <div className="mt-2 text-xs text-gray-500">
+                        {product.stockQuantity > 0 ? (
+                          <span>
+                            {product.stockQuantity === 1
+                              ? '1 item left'
+                              : `${product.stockQuantity} in stock`}
+                          </span>
+                        ) : product.isLimited ? (
+                          <span className="text-red-600">Out of stock</span>
+                        ) : (
+                          <span>In stock</span>
+                        )}
+                      </div>
+
+                      <div className="mt-4">
+                        <Link
+                          href={`/${vendor.slug}/products/${product.id}`}
+                          className="block w-full rounded-md bg-black px-4 py-2 text-center text-sm text-white hover:bg-gray-800"
+                        >
+                          View Product
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
+
+        {/* Non-subscribers see a teaser */}
+        {!hasActiveSubscription && vendor.products.length > 0 && (
+          <div className="mt-10 rounded-lg border bg-white p-8 text-center">
+            <span className="text-4xl">🔒</span>
+            <h2 className="mt-4 text-xl font-bold">Exclusive Products</h2>
+            <p className="mt-2 text-gray-600">
+              Subscribe to {vendor.storeName} to access {vendor.products.length} exclusive{' '}
+              {vendor.products.length === 1 ? 'product' : 'products'}.
+            </p>
           </div>
         )}
       </main>

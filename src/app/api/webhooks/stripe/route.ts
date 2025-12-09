@@ -63,6 +63,15 @@ export async function POST(req: Request) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const checkoutType = session.metadata?.type
+
+  // Handle product purchases
+  if (checkoutType === 'product_purchase') {
+    await handleProductPurchase(session)
+    return
+  }
+
+  // Handle subscription checkouts (default/legacy behavior)
   const userId = session.metadata?.userId
   const tierId = session.metadata?.tierId
   const stripeSubscriptionId = session.subscription as string
@@ -113,6 +122,59 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   })
 
   console.log(`Subscription created for user ${userId} to tier ${tierId}`)
+}
+
+async function handleProductPurchase(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId
+  const productId = session.metadata?.productId
+  const vendorId = session.metadata?.vendorId
+
+  if (!userId || !productId || !vendorId) {
+    console.error('Missing metadata in product purchase checkout:', session.id)
+    return
+  }
+
+  // Get the product to check stock
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  })
+
+  if (!product) {
+    console.error('Product not found:', productId)
+    return
+  }
+
+  // Create order record
+  await prisma.order.create({
+    data: {
+      userId,
+      vendorId,
+      status: 'PENDING',
+      totalInCents: session.amount_total ?? product.priceInCents,
+      stripePaymentIntentId: session.payment_intent as string,
+      items: {
+        create: {
+          productId,
+          quantity: 1,
+          priceInCents: product.priceInCents,
+        },
+      },
+    },
+  })
+
+  // Decrement stock if product has limited inventory
+  if (product.isLimited && product.stockQuantity > 0) {
+    await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stockQuantity: {
+          decrement: 1,
+        },
+      },
+    })
+  }
+
+  console.log(`Product purchase completed: product ${productId} for user ${userId}`)
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
