@@ -35,6 +35,11 @@ export default async function DashboardPage() {
             href="/dashboard/orders"
           />
           <DashboardCard
+            title="Shipping Addresses"
+            description="Manage your shipping addresses"
+            href="/dashboard/addresses"
+          />
+          <DashboardCard
             title="Browse Creators"
             description="Discover new creators to subscribe to"
             href="/creators"

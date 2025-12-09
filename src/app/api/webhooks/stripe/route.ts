@@ -128,6 +128,7 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
   const productId = session.metadata?.productId
   const vendorId = session.metadata?.vendorId
+  const addressId = session.metadata?.addressId
 
   if (!userId || !productId || !vendorId) {
     console.error('Missing metadata in product purchase checkout:', session.id)
@@ -185,6 +186,7 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: session.payment_intent as string,
       subscriptionTierId: subscription?.tierId ?? null,
       subscriptionTierName: subscription?.tier.name ?? null,
+      shippingAddressId: addressId ?? null,
       isPreOrder: product.isPreOrder,
       preOrderShipDate: product.preOrderShipDate,
       notes: !subscription ? 'WARNING: No active subscription at time of fulfillment' : null,

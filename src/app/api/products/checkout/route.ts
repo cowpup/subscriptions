@@ -8,6 +8,7 @@ import { getSubscriptionForVendor } from '@/lib/subscription'
 interface CheckoutRequest {
   productId: string
   vendorSlug: string
+  addressId: string
 }
 
 export async function POST(req: Request) {
@@ -24,10 +25,23 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as CheckoutRequest
-    const { productId, vendorSlug } = body
+    const { productId, vendorSlug, addressId } = body
 
     if (!productId || !vendorSlug) {
       return NextResponse.json({ error: 'Product ID and vendor slug are required' }, { status: 400 })
+    }
+
+    if (!addressId) {
+      return NextResponse.json({ error: 'Shipping address is required' }, { status: 400 })
+    }
+
+    // Verify address belongs to user
+    const address = await prisma.address.findUnique({
+      where: { id: addressId },
+    })
+
+    if (!address || address.userId !== user.id) {
+      return NextResponse.json({ error: 'Invalid shipping address' }, { status: 400 })
     }
 
     // Get the product with vendor info
@@ -140,6 +154,7 @@ export async function POST(req: Request) {
         productId: product.id,
         userId: user.id,
         vendorId: product.vendor.id,
+        addressId: addressId,
       },
     })
 
