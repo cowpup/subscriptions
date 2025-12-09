@@ -31,17 +31,17 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Implement 31-day access logic post-cancellation
 - [x] Create public vendor storefront pages
 - [x] Create subscriber dashboard with subscriptions view
-- [ ] Configure STRIPE_WEBHOOK_SECRET in production
-- [ ] Test complete checkout flow end-to-end
-- [ ] Add subscription cancellation UI for subscribers
+- [x] Configure STRIPE_WEBHOOK_SECRET in production
+- [x] Test complete checkout flow end-to-end
+- [x] Add subscription cancellation UI for subscribers
 - [ ] One-time product purchase flow
 
 ## Priority 4: Vendor Dashboard
 
 - [x] Subscription tier management (create tiers)
-- [ ] Edit existing tiers
-- [ ] Vendor profile/storefront customization (logo, banner, colors)
-- [ ] Product management (CRUD)
+- [x] Edit existing tiers
+- [x] Vendor profile/storefront customization (logo, banner, colors)
+- [x] Product management (CRUD)
 - [ ] Basic analytics (subscriber count, revenue)
 
 ## Priority 5: Subscriber Experience

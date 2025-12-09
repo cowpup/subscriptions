@@ -57,3 +57,42 @@ Tasks moved here from TODO.md upon completion.
   - Auto-generated slugs, validation, uniqueness checks
   - Vendor dashboard at /vendor with stats and quick actions
   - See agent log: `docs/agent-logs/vendor-registration-2025-12-08.md`
+
+- **Stripe Integration**
+  - Stripe SDK configured (API version 2025-11-17.clover)
+  - Subscription tier creation with Stripe Product/Price sync
+  - Checkout session creation
+  - Webhook handler for subscription lifecycle events
+  - 31-day access logic maintained on cancellation
+  - Deployed and tested at subr.net
+
+- **Public vendor storefronts**
+  - /{slug} pages showing vendor info and tiers
+  - Subscribe buttons with Stripe checkout
+  - Live at subr.net
+
+- **Subscriber dashboard**
+  - /dashboard/subscriptions showing active subscriptions
+  - Subscription cancellation with period-end logic
+  - Access maintained until accessExpiresAt
+
+- **Edit existing tiers**
+  - /vendor/tiers/[id] for editing tier details
+  - Prevents price changes if tier has subscribers
+  - Stripe price archival on changes
+
+- **Vendor profile customization**
+  - /vendor/settings page for storefront settings
+  - Logo, banner, accent color, description
+  - See agent log: `docs/agent-logs/product-management-2025-12-08.md`
+
+- **Product management**
+  - Full CRUD for vendor products
+  - Stripe product/price sync
+  - Tier-based access restrictions
+  - Stock quantity tracking
+  - See agent log: `docs/agent-logs/product-management-2025-12-08.md`
+
+- **Rebrand to subr.net**
+  - Replaced all SubscribeX/FannaEx references
+  - Updated package name and branding throughout

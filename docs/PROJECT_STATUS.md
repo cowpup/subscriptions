@@ -7,11 +7,12 @@
 
 ## Current State
 
-**Stripe subscription flow complete.** End-to-end subscription checkout works with Stripe webhooks. Vendor storefronts live at /{slug}. Subscriber dashboard shows active subscriptions.
+**Vendor dashboard feature-complete.** Vendors can manage subscription tiers, products, and storefront settings. Subscribers can view and cancel subscriptions. Live at subr.net.
 
 ## In Progress
 
-- Testing complete checkout flow (needs STRIPE_WEBHOOK_SECRET configured)
+- Product purchase flow for subscribers
+- Subscriber view of vendor inventory
 
 ## Recently Completed
 
@@ -33,7 +34,9 @@
 - Vendor dashboard (pending/approved/rejected states)
 - Admin dashboard at /admin
 - Admin vendor review at /admin/vendors
-- Vendor tier management (create/edit tiers)
+- Vendor tier management (create/edit/delete tiers)
+- Vendor storefront settings (logo, banner, accent color, description)
+- Product management (create/edit/delete with Stripe sync)
 
 ### Stripe Integration (Priority 3)
 - Stripe SDK configured (API version 2025-11-17.clover)
@@ -47,14 +50,19 @@
 - 31-day access logic (accessExpiresAt field)
 - Public vendor storefront pages (/{slug})
 - Subscriber dashboard with active subscriptions view
+- Subscription cancellation (cancel at period end)
+
+### Subscriber Experience
+- Browse vendor storefronts
+- View active subscriptions
+- Cancel subscriptions (maintains 31-day access)
 
 ## Upcoming Priorities
 
-1. Configure STRIPE_WEBHOOK_SECRET in Stripe Dashboard
-2. Test complete checkout flow end-to-end
-3. Add subscription cancellation UI
-4. Implement product catalog for vendors
-5. Build subscriber content access pages
+1. Product purchase flow (one-time purchases)
+2. Subscriber view of vendor inventory (gated by subscription)
+3. Basic analytics for vendors
+4. Giveaway system
 
 ## Key Routes
 
@@ -63,24 +71,33 @@
 | `/` | Homepage |
 | `/sign-in`, `/sign-up` | Authentication |
 | `/dashboard` | User dashboard |
-| `/dashboard/subscriptions` | Active subscriptions |
+| `/dashboard/subscriptions` | Active subscriptions with cancel |
 | `/dashboard/become-creator` | Vendor application |
 | `/vendor` | Vendor dashboard |
 | `/vendor/tiers` | Manage subscription tiers |
 | `/vendor/tiers/new` | Create new tier |
+| `/vendor/tiers/[id]` | Edit existing tier |
+| `/vendor/products` | Manage products |
+| `/vendor/products/new` | Create new product |
+| `/vendor/products/[id]` | Edit existing product |
+| `/vendor/settings` | Storefront customization |
 | `/admin` | Admin dashboard |
 | `/admin/vendors` | Review vendor applications |
 | `/{slug}` | Public vendor storefront |
 
-## Environment Setup Required
+## Environment Setup
 
-```
-STRIPE_WEBHOOK_SECRET=whsec_xxx  # From Stripe Dashboard → Webhooks
-```
+All environment variables configured in Vercel:
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+- DATABASE_URL (Neon/Vercel Postgres)
+- Clerk keys
 
-Webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
-Events to subscribe: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted, invoice.payment_failed
+Webhook endpoint: `https://www.subr.net/api/webhooks/stripe`
 
 ## Notes
 
-Project builds successfully with `npm run build`. Dev server available via `npm run dev`.
+- Project builds successfully with `npm run build`
+- Live at subr.net (Vercel deployment)
+- Rebranded from SubscribeX to subr.net
