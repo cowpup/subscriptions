@@ -11,6 +11,12 @@ interface VendorData {
   logoUrl: string | null
   bannerUrl: string | null
   accentColor: string | null
+  street1: string | null
+  street2: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
+  country: string | null
 }
 
 interface VendorSettingsFormProps {
@@ -29,6 +35,15 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
   const [logoUrl, setLogoUrl] = useState(vendor.logoUrl ?? '')
   const [bannerUrl, setBannerUrl] = useState(vendor.bannerUrl ?? '')
   const [accentColor, setAccentColor] = useState(vendor.accentColor ?? '#000000')
+
+  // Shipping address
+  const [street1, setStreet1] = useState(vendor.street1 ?? '')
+  const [street2, setStreet2] = useState(vendor.street2 ?? '')
+  const [city, setCity] = useState(vendor.city ?? '')
+  const [state, setState] = useState(vendor.state ?? '')
+  const [postalCode, setPostalCode] = useState(vendor.postalCode ?? '')
+  const [country, setCountry] = useState(vendor.country ?? 'US')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -50,6 +65,12 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
             logoUrl: logoUrl.trim() || null,
             bannerUrl: bannerUrl.trim() || null,
             accentColor: accentColor || null,
+            street1: street1.trim() || null,
+            street2: street2.trim() || null,
+            city: city.trim() || null,
+            state: state.trim() || null,
+            postalCode: postalCode.trim() || null,
+            country: country.trim() || null,
           }),
         })
 
@@ -69,7 +90,7 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
         setIsSubmitting(false)
       }
     },
-    [storeName, description, logoUrl, bannerUrl, accentColor, router]
+    [storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country, router]
   )
 
   return (
@@ -224,6 +245,105 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
             <p className="mt-1 text-xs text-gray-500">
               Used for buttons and highlights on your storefront
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-white p-6">
+        <h2 className="font-semibold">Shipping Return Address</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          This address will be used as the return address on shipping labels.
+        </p>
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <label htmlFor="street1" className="block text-sm font-medium text-gray-700">
+              Street Address
+            </label>
+            <input
+              type="text"
+              id="street1"
+              value={street1}
+              onChange={(e) => setStreet1(e.target.value)}
+              placeholder="123 Main St"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="street2" className="block text-sm font-medium text-gray-700">
+              Apartment, suite, etc. (optional)
+            </label>
+            <input
+              type="text"
+              id="street2"
+              value={street2}
+              onChange={(e) => setStreet2(e.target.value)}
+              placeholder="Suite 100"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                City
+              </label>
+              <input
+                type="text"
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="San Francisco"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                State
+              </label>
+              <input
+                type="text"
+                id="state"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="CA"
+                maxLength={2}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
+                ZIP / Postal Code
+              </label>
+              <input
+                type="text"
+                id="postalCode"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="94102"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                Country
+              </label>
+              <select
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              >
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

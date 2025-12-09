@@ -94,6 +94,8 @@ export default async function EditProductPage({ params }: PageProps) {
               stockQuantity: product.stockQuantity,
               isActive: product.isActive,
               tierAccessIds: product.tierAccess.map((ta) => ta.tierId),
+              isPreOrder: product.isPreOrder,
+              preOrderShipDate: product.preOrderShipDate?.toISOString().split('T')[0] ?? null,
             }}
             tiers={tiers.map((t) => ({
               id: t.id,

@@ -7,7 +7,7 @@
 
 ## Current State
 
-**Vendor management features complete.** Full order management, shipment tracking, and subscriber management for vendors. Subscription tier upgrades/downgrades functional. Live at subr.net.
+**Shippo integration and pre-order system complete.** Vendors can create shipping labels through Shippo, mark products as pre-orders with ship dates, and track orders through fulfillment. Security hardening applied with HTTP headers and double-verification in webhooks. Live at subr.net.
 
 ## In Progress
 
@@ -34,7 +34,7 @@
 - Admin dashboard at /admin
 - Admin vendor review at /admin/vendors
 - Vendor tier management (create/edit/delete tiers)
-- Vendor storefront settings (logo, banner, accent color, description)
+- Vendor storefront settings (logo, banner, accent color, description, **return address**)
 - Product management (create/edit/delete with Stripe sync)
 
 ### Stripe Integration (Priority 3)
@@ -63,15 +63,37 @@
 - Product checkout with Stripe
 - Webhook handling for purchase completion
 - Stock management for limited products
+- **Subscription tier tracking on orders** (audit trail)
 
-### Vendor Management (NEW)
+### Vendor Management
 - Orders page with sorting/filtering by date, total, customer, status
+- **Subscription tier display on orders**
 - Shipments page with Awaiting/Shipped tabs
 - Subscribers page with management actions
 - Vendor can cancel subscriber subscriptions
 - Vendor can report abusive users
 - Subscription tier changes (upgrade/downgrade)
 - Verified vendor badge on storefronts
+
+### Shipping & Fulfillment (NEW)
+- **Shippo SDK integration** for multi-carrier shipping labels
+- Package dimension entry (weight, length, width, height)
+- Rate comparison from USPS, UPS, FedEx, DHL
+- Label purchase with tracking number and downloadable PDF
+- Vendor return address configuration in settings
+- Tracking number display and label download links
+
+### Pre-Order System (NEW)
+- Products can be marked as pre-orders
+- Expected ship date field on products
+- Pre-orders hidden from "Awaiting Shipment" until ship date passes
+- Pre-order badge on orders
+
+### Security Hardening (NEW)
+- HTTP security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy)
+- Removed X-Powered-By header from API routes
+- Double-verification of subscription access in Stripe webhook
+- Subscription tier stored on orders for audit trail
 
 ### UI/UX Improvements
 - Product card images now fit uncropped (object-contain)
@@ -101,11 +123,11 @@
 | `/vendor/tiers/[id]` | Edit existing tier |
 | `/vendor/products` | Manage products |
 | `/vendor/products/new` | Create new product |
-| `/vendor/products/[id]` | Edit existing product |
+| `/vendor/products/[id]` | Edit existing product (with pre-order settings) |
 | `/vendor/orders` | Order management with filters |
-| `/vendor/shipments` | Shipment tracking (awaiting/shipped) |
+| `/vendor/shipments` | Shipment tracking with Shippo labels |
 | `/vendor/subscribers` | Subscriber management |
-| `/vendor/settings` | Storefront customization |
+| `/vendor/settings` | Storefront customization + return address |
 | `/admin` | Admin dashboard |
 | `/admin/vendors` | Review vendor applications |
 | `/{slug}` | Public vendor storefront |
@@ -119,6 +141,7 @@ All environment variables configured in Vercel:
 - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 - DATABASE_URL (Neon/Vercel Postgres)
 - Clerk keys
+- **SHIPPO_API_KEY** (for shipping labels)
 
 Webhook endpoint: `https://www.subr.net/api/webhooks/stripe`
 
@@ -127,3 +150,4 @@ Webhook endpoint: `https://www.subr.net/api/webhooks/stripe`
 - Project builds successfully with `npm run build`
 - Live at subr.net (Vercel deployment)
 - Rebranded from SubscribeX to subr.net
+- Shippo integration requires API key from https://apps.goshippo.com/settings/api

@@ -232,8 +232,26 @@ export default async function VendorOrdersPage({ searchParams }: PageProps) {
                     {/* Customer Info */}
                     <div>
                       <h3 className="text-sm font-medium text-gray-700">Customer</h3>
-                      <p className="mt-1 text-sm">{order.user.name || 'No name'}</p>
+                      <p className="mt-1 text-sm">{order.user.name ?? 'No name'}</p>
                       <p className="text-sm text-gray-500">{order.user.email}</p>
+
+                      {/* Subscription Tier at Purchase */}
+                      <div className="mt-2">
+                        {order.subscriptionTierName ? (
+                          <span className="inline-block rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                            {order.subscriptionTierName}
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                            No Tier Recorded
+                          </span>
+                        )}
+                        {order.isPreOrder && (
+                          <span className="ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Pre-Order
+                          </span>
+                        )}
+                      </div>
 
                       {order.shippingAddress && (
                         <div className="mt-3">

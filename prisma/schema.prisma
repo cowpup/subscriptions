@@ -37,6 +37,7 @@ model Address {
   userId    String
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  name      String  @default("") // Recipient name
   label     String  // "Home", "Work", etc.
   line1     String
   line2     String?
@@ -98,6 +99,14 @@ model Vendor {
   accentColor String? // Hex color for branding
 
   stripeAccountId String? @unique // Stripe Connect account
+
+  // Shipping return address
+  street1    String?
+  street2    String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?  @default("US")
 
   // Approval workflow
   status       VendorStatus @default(PENDING)
@@ -221,6 +230,10 @@ model Product {
   isDrop    Boolean @default(false) // Special drop item
   dropDate  DateTime? // When the drop goes live
 
+  // Pre-order support
+  isPreOrder       Boolean   @default(false)
+  preOrderShipDate DateTime? // When pre-orders will ship
+
   stripeProductId String? @unique
   stripePriceId   String? @unique
 
@@ -234,6 +247,7 @@ model Product {
   @@index([vendorId])
   @@index([isActive, isDrop])
   @@index([dropDate])
+  @@index([isPreOrder, preOrderShipDate])
 }
 
 // Which tiers can access which products (empty = all tiers)
@@ -341,6 +355,10 @@ model Order {
   vendorId String
   vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
+  // Track subscription tier at time of purchase for security audit
+  subscriptionTierId   String?
+  subscriptionTierName String?
+
   status OrderStatus @default(PENDING)
 
   totalInCents          Int
@@ -348,6 +366,19 @@ model Order {
 
   shippingAddressId String?
   shippingAddress   Address? @relation(fields: [shippingAddressId], references: [id])
+
+  // Pre-order support
+  isPreOrder     Boolean   @default(false)
+  preOrderShipDate DateTime?
+
+  // Shipping details (for Shippo integration)
+  weightOz       Float?
+  lengthIn       Float?
+  widthIn        Float?
+  heightIn       Float?
+  trackingNumber String?
+  shippingLabelUrl String?
+  shippoShipmentId String?
 
   notes String?
 
@@ -359,6 +390,7 @@ model Order {
   @@index([userId])
   @@index([vendorId])
   @@index([status])
+  @@index([isPreOrder, preOrderShipDate])
 }
 
 model OrderItem {

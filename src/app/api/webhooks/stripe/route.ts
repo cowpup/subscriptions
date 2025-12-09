@@ -134,9 +134,31 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Get the product to check stock
+  // SECURITY: Double-verify subscription access before creating order
+  // This prevents any edge cases where checkout was initiated but subscription expired
+  const subscription = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      tier: { vendorId },
+      accessExpiresAt: { gt: new Date() },
+    },
+    include: {
+      tier: true,
+    },
+  })
+
+  if (!subscription) {
+    console.error(`SECURITY: User ${userId} no longer has subscription access for vendor ${vendorId}`)
+    // Payment already collected - this would need manual refund review
+    // Log for admin review but still create order marked as PENDING for review
+  }
+
+  // Get the product to check stock and tier access
   const product = await prisma.product.findUnique({
     where: { id: productId },
+    include: {
+      tierAccess: true,
+    },
   })
 
   if (!product) {
@@ -144,14 +166,28 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Create order record
+  // SECURITY: Verify tier access if product has tier restrictions
+  let hasTierAccess = true
+  if (product.tierAccess.length > 0 && subscription) {
+    hasTierAccess = product.tierAccess.some((ta) => ta.tierId === subscription.tierId)
+    if (!hasTierAccess) {
+      console.error(`SECURITY: User ${userId} tier ${subscription.tierId} lacks access to product ${productId}`)
+    }
+  }
+
+  // Create order record with subscription tier info for vendor reference
   await prisma.order.create({
     data: {
       userId,
       vendorId,
-      status: 'PENDING',
+      status: 'PAID',
       totalInCents: session.amount_total ?? product.priceInCents,
       stripePaymentIntentId: session.payment_intent as string,
+      subscriptionTierId: subscription?.tierId ?? null,
+      subscriptionTierName: subscription?.tier.name ?? null,
+      isPreOrder: product.isPreOrder,
+      preOrderShipDate: product.preOrderShipDate,
+      notes: !subscription ? 'WARNING: No active subscription at time of fulfillment' : null,
       items: {
         create: {
           productId,

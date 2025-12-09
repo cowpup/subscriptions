@@ -68,6 +68,12 @@ export default async function VendorSettingsPage() {
             logoUrl: vendor.logoUrl,
             bannerUrl: vendor.bannerUrl,
             accentColor: vendor.accentColor,
+            street1: vendor.street1,
+            street2: vendor.street2,
+            city: vendor.city,
+            state: vendor.state,
+            postalCode: vendor.postalCode,
+            country: vendor.country,
           }}
         />
       </main>

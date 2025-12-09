@@ -13,6 +13,8 @@ interface UpdateProductRequest {
   stockQuantity?: number
   isActive?: boolean
   tierIds?: string[]
+  isPreOrder?: boolean
+  preOrderShipDate?: string | null
 }
 
 interface RouteParams {
@@ -86,7 +88,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     }
 
     const body = (await req.json()) as UpdateProductRequest
-    const { name, description, priceInCents, imageUrl, stockQuantity, isActive, tierIds } = body
+    const { name, description, priceInCents, imageUrl, stockQuantity, isActive, tierIds, isPreOrder, preOrderShipDate } = body
 
     // Validation
     if (name !== undefined && !name.trim()) {
@@ -139,6 +141,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         ...(imageUrl !== undefined && { images: imageUrl ? [imageUrl] : [] }),
         ...(stockQuantity !== undefined && { stockQuantity }),
         ...(isActive !== undefined && { isActive }),
+        ...(isPreOrder !== undefined && { isPreOrder }),
+        ...(preOrderShipDate !== undefined && { preOrderShipDate: preOrderShipDate ? new Date(preOrderShipDate) : null }),
         ...(newStripePriceId !== existingProduct.stripePriceId && { stripePriceId: newStripePriceId }),
         ...(tierIds !== undefined && tierIds.length > 0 && {
           tierAccess: {

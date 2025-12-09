@@ -115,3 +115,17 @@ Tasks moved here from TODO.md upon completion.
   - Vendor Subscribers page with cancel/report actions
   - Reusable Header and VendorBadge components
   - See agent log: `docs/agent-logs/ui-fixes-vendor-hub-2025-12-08.md`
+
+- **Shippo Integration & Pre-Order System**
+  - Security hardening with HTTP headers (X-Frame-Options, X-Content-Type-Options, etc.)
+  - Double-verification of subscription access in Stripe webhook
+  - Subscription tier tracking on orders for audit trail
+  - Pre-order system for products with expected ship dates
+  - Pre-orders hidden from shipments until ship date passes
+  - Shippo SDK integration for multi-carrier shipping labels
+  - Package dimension entry (weight, length, width, height)
+  - Rate comparison from USPS, UPS, FedEx, DHL
+  - Label purchase with tracking number and downloadable PDF
+  - Vendor return address settings in vendor settings page
+  - Address name field added to Address model
+  - See agent log: `docs/agent-logs/shippo-preorder-integration-2025-12-08.md`

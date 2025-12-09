@@ -45,6 +45,9 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Order management for vendors (with filtering/sorting)
 - [x] Shipments management (awaiting/shipped tabs)
 - [x] Subscriber management (view, cancel, report)
+- [x] Shippo integration for shipping labels
+- [x] Pre-order system with ship dates
+- [x] Vendor return address settings
 - [ ] Basic analytics (subscriber count, revenue charts)
 
 ## Priority 5: Subscriber Experience

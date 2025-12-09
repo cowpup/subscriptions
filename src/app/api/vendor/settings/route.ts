@@ -10,6 +10,12 @@ interface UpdateSettingsRequest {
   logoUrl?: string | null
   bannerUrl?: string | null
   accentColor?: string | null
+  street1?: string | null
+  street2?: string | null
+  city?: string | null
+  state?: string | null
+  postalCode?: string | null
+  country?: string | null
 }
 
 export async function PATCH(req: Request) {
@@ -35,7 +41,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = (await req.json()) as UpdateSettingsRequest
-    const { storeName, description, logoUrl, bannerUrl, accentColor } = body
+    const { storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country } = body
 
     // Validate store name if provided
     if (storeName !== undefined) {
@@ -74,6 +80,12 @@ export async function PATCH(req: Request) {
         ...(logoUrl !== undefined && { logoUrl }),
         ...(bannerUrl !== undefined && { bannerUrl }),
         ...(accentColor !== undefined && { accentColor }),
+        ...(street1 !== undefined && { street1 }),
+        ...(street2 !== undefined && { street2 }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state }),
+        ...(postalCode !== undefined && { postalCode }),
+        ...(country !== undefined && { country }),
       },
     })
 

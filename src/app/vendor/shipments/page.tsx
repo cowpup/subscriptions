@@ -37,6 +37,8 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
   }
 
   // Build where clause based on tab
+  // Pre-orders don't show in awaiting until their ship date has passed
+  const now = new Date()
   const where: Prisma.OrderWhereInput = {
     vendorId: vendor.id,
     status: tab === 'awaiting'
@@ -44,12 +46,31 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
       : { in: ['SHIPPED', 'DELIVERED'] },
   }
 
-  if (search) {
-    where.OR = [
-      { id: { contains: search, mode: 'insensitive' } },
-      { user: { name: { contains: search, mode: 'insensitive' } } },
-      { user: { email: { contains: search, mode: 'insensitive' } } },
+  // For awaiting tab, exclude pre-orders that haven't reached their ship date
+  if (tab === 'awaiting') {
+    where.AND = [
+      {
+        OR: [
+          { isPreOrder: false },
+          { isPreOrder: true, preOrderShipDate: { lte: now } },
+        ],
+      },
     ]
+  }
+
+  if (search) {
+    const searchConditions = {
+      OR: [
+        { id: { contains: search, mode: 'insensitive' as const } },
+        { user: { name: { contains: search, mode: 'insensitive' as const } } },
+        { user: { email: { contains: search, mode: 'insensitive' as const } } },
+      ],
+    }
+    if (where.AND) {
+      (where.AND as Prisma.OrderWhereInput[]).push(searchConditions)
+    } else {
+      where.AND = [searchConditions]
+    }
   }
 
   // Build orderBy clause
@@ -79,6 +100,19 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
       },
     },
   })
+
+  // Transform orders to include all shipping-related fields
+  const ordersWithShipping = orders.map((order) => ({
+    ...order,
+    isPreOrder: order.isPreOrder,
+    preOrderShipDate: order.preOrderShipDate,
+    trackingNumber: order.trackingNumber,
+    shippingLabelUrl: order.shippingLabelUrl,
+    weightOz: order.weightOz,
+    lengthIn: order.lengthIn,
+    widthIn: order.widthIn,
+    heightIn: order.heightIn,
+  }))
 
   // Get counts for tabs
   const awaitingCount = await prisma.order.count({
@@ -162,7 +196,7 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
         />
 
         {/* Orders List */}
-        {orders.length === 0 ? (
+        {ordersWithShipping.length === 0 ? (
           <div className="mt-6 rounded-lg border bg-white p-8 text-center">
             <span className="text-4xl">📦</span>
             <p className="mt-4 text-gray-600">
@@ -173,7 +207,7 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div className="mt-6 space-y-4">
-            {orders.map((order) => (
+            {ordersWithShipping.map((order) => (
               <ShipmentCard key={order.id} order={order} />
             ))}
           </div>

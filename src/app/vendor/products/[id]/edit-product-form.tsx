@@ -19,6 +19,8 @@ interface ProductData {
   stockQuantity: number | null
   isActive: boolean
   tierAccessIds: string[]
+  isPreOrder: boolean
+  preOrderShipDate: string | null
 }
 
 interface EditProductFormProps {
@@ -42,6 +44,8 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
   )
   const [isActive, setIsActive] = useState(product.isActive)
   const [selectedTiers, setSelectedTiers] = useState<string[]>(product.tierAccessIds)
+  const [isPreOrder, setIsPreOrder] = useState(product.isPreOrder)
+  const [preOrderShipDate, setPreOrderShipDate] = useState(product.preOrderShipDate ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -75,6 +79,13 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
         return
       }
 
+      // Validate pre-order date if enabled
+      if (isPreOrder && !preOrderShipDate) {
+        setError('Please enter a ship date for pre-orders')
+        setIsSubmitting(false)
+        return
+      }
+
       try {
         const response = await fetch(`/api/vendor/products/${product.id}`, {
           method: 'PATCH',
@@ -87,6 +98,8 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
             stockQuantity: stock,
             isActive,
             tierIds: selectedTiers,
+            isPreOrder,
+            preOrderShipDate: isPreOrder && preOrderShipDate ? new Date(preOrderShipDate).toISOString() : null,
           }),
         })
 
@@ -106,7 +119,7 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
         setIsSubmitting(false)
       }
     },
-    [name, description, price, imageUrl, stockQuantity, isActive, selectedTiers, product.id, router]
+    [name, description, price, imageUrl, stockQuantity, isActive, selectedTiers, isPreOrder, preOrderShipDate, product.id, router]
   )
 
   const handleDelete = useCallback(async () => {
@@ -263,6 +276,38 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
         <p className="mt-1 text-xs text-gray-500">
           Inactive products won&apos;t be visible to subscribers.
         </p>
+      </div>
+
+      {/* Pre-Order Settings */}
+      <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isPreOrder}
+            onChange={(e) => setIsPreOrder(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+          />
+          <span className="text-sm font-medium text-gray-700">Pre-Order Product</span>
+        </label>
+        <p className="mt-1 text-xs text-gray-600">
+          Pre-orders won&apos;t appear in shipments until the ship date has passed.
+        </p>
+
+        {isPreOrder && (
+          <div className="mt-3">
+            <label htmlFor="preOrderShipDate" className="block text-sm font-medium text-gray-700">
+              Expected Ship Date
+            </label>
+            <input
+              type="date"
+              id="preOrderShipDate"
+              value={preOrderShipDate}
+              onChange={(e) => setPreOrderShipDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+        )}
       </div>
 
       {tiers.length > 0 && (
