@@ -5,6 +5,7 @@ import { UserButton } from '@clerk/nextjs'
 import { getCurrentUser } from '@/lib/auth'
 import { getActiveSubscriptions } from '@/lib/subscription'
 import { formatAmountForDisplay } from '@/lib/stripe'
+import { CancelButton } from './cancel-button'
 
 interface PageProps {
   searchParams: Promise<{ success?: string }>
@@ -137,10 +138,11 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
                   >
                     View Content
                   </Link>
-                  {subscription.status === 'ACTIVE' && (
-                    <button className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      Manage Subscription
-                    </button>
+                  {subscription.status === 'ACTIVE' && !subscription.cancelledAt && (
+                    <CancelButton
+                      subscriptionId={subscription.id}
+                      tierName={subscription.tier.name}
+                    />
                   )}
                 </div>
               </div>
