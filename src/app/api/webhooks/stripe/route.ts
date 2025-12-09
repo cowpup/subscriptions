@@ -128,11 +128,69 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
   const productId = session.metadata?.productId
   const vendorId = session.metadata?.vendorId
-  const addressId = session.metadata?.addressId
 
   if (!userId || !productId || !vendorId) {
     console.error('Missing metadata in product purchase checkout:', session.id)
     return
+  }
+
+  // Retrieve the full session to get shipping details
+  const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+    expand: ['shipping_details'],
+  })
+
+  // Get shipping address from Stripe checkout session
+  // Type assertion needed as shipping_details type varies by Stripe version
+  const shippingDetails = (fullSession as unknown as {
+    shipping_details?: {
+      name?: string | null
+      address?: {
+        line1?: string | null
+        line2?: string | null
+        city?: string | null
+        state?: string | null
+        postal_code?: string | null
+        country?: string | null
+      } | null
+    } | null
+  }).shipping_details
+
+  let shippingAddressId: string | null = null
+
+  if (shippingDetails?.address) {
+    // Save or find existing address for the user
+    const existingAddress = await prisma.address.findFirst({
+      where: {
+        userId,
+        line1: shippingDetails.address.line1 ?? '',
+        city: shippingDetails.address.city ?? '',
+        state: shippingDetails.address.state ?? '',
+        postalCode: shippingDetails.address.postal_code ?? '',
+        country: shippingDetails.address.country ?? '',
+      },
+    })
+
+    if (existingAddress) {
+      shippingAddressId = existingAddress.id
+    } else {
+      // Create new address from Stripe checkout
+      const addressCount = await prisma.address.count({ where: { userId } })
+      const newAddress = await prisma.address.create({
+        data: {
+          userId,
+          name: shippingDetails.name ?? 'Shipping Address',
+          label: 'Shipping',
+          line1: shippingDetails.address.line1 ?? '',
+          line2: shippingDetails.address.line2 ?? null,
+          city: shippingDetails.address.city ?? '',
+          state: (shippingDetails.address.state ?? '').toUpperCase(),
+          postalCode: shippingDetails.address.postal_code ?? '',
+          country: (shippingDetails.address.country ?? 'US').toUpperCase(),
+          isDefault: addressCount === 0, // Make default if first address
+        },
+      })
+      shippingAddressId = newAddress.id
+    }
   }
 
   // SECURITY: Double-verify subscription access before creating order
@@ -186,7 +244,7 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
       stripePaymentIntentId: session.payment_intent as string,
       subscriptionTierId: subscription?.tierId ?? null,
       subscriptionTierName: subscription?.tier.name ?? null,
-      shippingAddressId: addressId ?? null,
+      shippingAddressId,
       isPreOrder: product.isPreOrder,
       preOrderShipDate: product.preOrderShipDate,
       notes: !subscription ? 'WARNING: No active subscription at time of fulfillment' : null,

@@ -8,7 +8,6 @@ import { getSubscriptionForVendor } from '@/lib/subscription'
 interface CheckoutRequest {
   productId: string
   vendorSlug: string
-  addressId: string
 }
 
 export async function POST(req: Request) {
@@ -25,24 +24,16 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as CheckoutRequest
-    const { productId, vendorSlug, addressId } = body
+    const { productId, vendorSlug } = body
 
     if (!productId || !vendorSlug) {
       return NextResponse.json({ error: 'Product ID and vendor slug are required' }, { status: 400 })
     }
 
-    if (!addressId) {
-      return NextResponse.json({ error: 'Shipping address is required' }, { status: 400 })
-    }
-
-    // Verify address belongs to user
-    const address = await prisma.address.findUnique({
-      where: { id: addressId },
+    // Get user's default address for pre-filling Stripe checkout
+    const defaultAddress = await prisma.address.findFirst({
+      where: { userId: user.id, isDefault: true },
     })
-
-    if (!address || address.userId !== user.id) {
-      return NextResponse.json({ error: 'Invalid shipping address' }, { status: 400 })
-    }
 
     // Get the product with vendor info
     const product = await prisma.product.findUnique({
@@ -126,6 +117,20 @@ export async function POST(req: Request) {
         metadata: {
           userId: user.id,
         },
+        // Pre-fill shipping address if user has one saved
+        ...(defaultAddress && {
+          shipping: {
+            name: defaultAddress.name,
+            address: {
+              line1: defaultAddress.line1,
+              line2: defaultAddress.line2 ?? undefined,
+              city: defaultAddress.city,
+              state: defaultAddress.state,
+              postal_code: defaultAddress.postalCode,
+              country: defaultAddress.country,
+            },
+          },
+        }),
       })
 
       await prisma.user.update({
@@ -134,9 +139,24 @@ export async function POST(req: Request) {
       })
 
       stripeCustomerId = customer.id
+    } else if (defaultAddress) {
+      // Update existing customer's shipping address if they have a default
+      await stripe.customers.update(stripeCustomerId, {
+        shipping: {
+          name: defaultAddress.name,
+          address: {
+            line1: defaultAddress.line1,
+            line2: defaultAddress.line2 ?? undefined,
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            postal_code: defaultAddress.postalCode,
+            country: defaultAddress.country,
+          },
+        },
+      })
     }
 
-    // Create Stripe checkout session for one-time purchase
+    // Create Stripe checkout session for one-time purchase with shipping
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: 'payment',
@@ -147,6 +167,16 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
+      // Enable shipping address collection in Stripe Checkout
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA'],
+      },
+      // Pre-fill shipping address if user has one saved
+      ...(defaultAddress && {
+        customer_update: {
+          shipping: 'auto',
+        },
+      }),
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${vendorSlug}/products/${productId}?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${vendorSlug}/products/${productId}?canceled=true`,
       metadata: {
@@ -154,7 +184,6 @@ export async function POST(req: Request) {
         productId: product.id,
         userId: user.id,
         vendorId: product.vendor.id,
-        addressId: addressId,
       },
     })
 
