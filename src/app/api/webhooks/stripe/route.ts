@@ -30,8 +30,11 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log(`Processing webhook event: ${event.type}`)
+
     switch (event.type) {
       case 'checkout.session.completed': {
+        console.log('Checkout session completed:', event.data.object.id, 'metadata:', event.data.object.metadata)
         await handleCheckoutCompleted(event.data.object)
         break
       }
@@ -64,9 +67,11 @@ export async function POST(req: Request) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const checkoutType = session.metadata?.type
+  console.log('handleCheckoutCompleted called, type:', checkoutType)
 
   // Handle product purchases
   if (checkoutType === 'product_purchase') {
+    console.log('Routing to handleProductPurchase')
     await handleProductPurchase(session)
     return
   }
@@ -134,14 +139,12 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Retrieve the full session to get shipping details
-  const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-    expand: ['shipping_details'],
-  })
+  // Retrieve the full session to get all details
+  const fullSession = await stripe.checkout.sessions.retrieve(session.id)
 
   // Get shipping address from Stripe checkout session
-  // Type assertion needed as shipping_details type varies by Stripe version
-  const shippingDetails = (fullSession as unknown as {
+  // Cast to access shipping_details which exists but may not be in strict types
+  const sessionWithShipping = fullSession as unknown as {
     shipping_details?: {
       name?: string | null
       address?: {
@@ -153,7 +156,8 @@ async function handleProductPurchase(session: Stripe.Checkout.Session) {
         country?: string | null
       } | null
     } | null
-  }).shipping_details
+  }
+  const shippingDetails = sessionWithShipping.shipping_details
 
   let shippingAddressId: string | null = null
 
