@@ -1,13 +1,13 @@
 # Project Status
 
-**Last Updated:** 2025-12-08
+**Last Updated:** 2025-12-09
 **Updated By:** Agent
 
 ---
 
 ## Current State
 
-**Shippo integration and pre-order system complete.** Vendors can create shipping labels through Shippo, mark products as pre-orders with ship dates, and track orders through fulfillment. Security hardening applied with HTTP headers and double-verification in webhooks. Live at subr.net.
+**Shipping address management and bulk label printing complete.** Users can save shipping addresses that auto-populate in Stripe Checkout. Vendors can create shipping profiles for common package sizes and bulk-print labels for multiple orders at once. All shipping functionality now production-ready. Live at subr.net.
 
 ## In Progress
 
@@ -75,13 +75,18 @@
 - Subscription tier changes (upgrade/downgrade)
 - Verified vendor badge on storefronts
 
-### Shipping & Fulfillment (NEW)
+### Shipping & Fulfillment
 - **Shippo SDK integration** for multi-carrier shipping labels
 - Package dimension entry (weight, length, width, height)
 - Rate comparison from USPS, UPS, FedEx, DHL
 - Label purchase with tracking number and downloadable PDF
 - Vendor return address configuration in settings
 - Tracking number display and label download links
+- **User shipping address management** (`/dashboard/addresses`)
+- **Stripe Checkout shipping collection** with pre-fill from saved addresses
+- **Shipping profiles** for vendors (save common package dimensions)
+- **Bulk label printing** - select multiple orders, get rates, purchase all at once
+- **Manual address entry** for orders missing shipping addresses
 
 ### Pre-Order System (NEW)
 - Products can be marked as pre-orders
@@ -115,6 +120,7 @@
 | `/sign-in`, `/sign-up` | Authentication |
 | `/dashboard` | User dashboard |
 | `/dashboard/subscriptions` | Active subscriptions with cancel |
+| `/dashboard/addresses` | Shipping address management |
 | `/dashboard/orders` | Subscriber order history |
 | `/dashboard/become-creator` | Vendor application |
 | `/vendor` | Vendor dashboard |
