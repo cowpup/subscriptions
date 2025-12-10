@@ -121,9 +121,11 @@ export interface PurchaseLabelResult {
   status: string
 }
 
+export type LabelFileType = 'PDF' | 'PDF_4x6' | 'PDF_A4' | 'PNG' | 'ZPLII'
+
 export async function purchaseLabel(
   rateId: string,
-  labelFileType: 'PDF' | 'PNG' | 'ZPLII' = 'PDF'
+  labelFileType: LabelFileType = 'PDF_4x6'
 ): Promise<PurchaseLabelResult> {
   const transaction = await getShippo().transactions.create({
     rate: rateId,

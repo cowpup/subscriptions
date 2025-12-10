@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getCurrentUser } from '@/lib/auth'
 import { getVendorByUserId } from '@/lib/vendor'
 import { prisma } from '@/lib/prisma'
-import { createShipment, purchaseLabel, type ShippoParcel } from '@/lib/shippo'
+import { createShipment, purchaseLabel, type ShippoParcel, type LabelFileType } from '@/lib/shippo'
 
 interface GetRatesRequest {
   weightOz: number
@@ -169,7 +169,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-    const labelResult = await purchaseLabel(rateId)
+    const labelResult = await purchaseLabel(rateId, vendor.labelFormat as LabelFileType)
 
     // Update order with shipping label details
     await prisma.order.update({

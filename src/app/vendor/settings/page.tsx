@@ -81,6 +81,7 @@ export default async function VendorSettingsPage() {
             state: vendor.state,
             postalCode: vendor.postalCode,
             country: vendor.country,
+            labelFormat: vendor.labelFormat,
           }}
         />
 

@@ -59,12 +59,10 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Upgrade/downgrade subscription tiers
 - [x] Order history page
 - [x] Notification preferences
-- [ ] Giveaway entry system
 
 ## Priority 6: Advanced Features
 
 - [ ] Promo code system (scoped by tier, user segment)
-- [ ] Giveaway management for vendors
 - [ ] User interest-based recommendations
 - [ ] Drop notification system
 

@@ -108,6 +108,9 @@ model Vendor {
   postalCode String?
   country    String?  @default("US")
 
+  // Shipping label preferences
+  labelFormat String @default("PDF_4x6")  // PDF_4x6, PDF_8.5x11, PNG, ZPL
+
   // Approval workflow
   status       VendorStatus @default(PENDING)
   appliedAt    DateTime     @default(now())
@@ -142,9 +145,15 @@ model ShippingProfile {
   widthIn  Float
   heightIn Float
 
+  // Default shipping method for one-click labels
+  defaultCarrier      String?  // e.g., "usps", "ups", "fedex"
+  defaultServiceToken String?  // e.g., "usps_priority", "ups_ground"
+
   isDefault Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  products Product[]
 
   @@unique([vendorId, name])
   @@index([vendorId])
@@ -253,6 +262,10 @@ model Product {
   // Pre-order support
   isPreOrder       Boolean   @default(false)
   preOrderShipDate DateTime? // When pre-orders will ship
+
+  // Shipping - link to profile for one-click label generation
+  shippingProfileId String?
+  shippingProfile   ShippingProfile? @relation(fields: [shippingProfileId], references: [id], onDelete: SetNull)
 
   stripeProductId String? @unique
   stripePriceId   String? @unique

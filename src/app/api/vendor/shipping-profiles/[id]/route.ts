@@ -11,6 +11,8 @@ interface UpdateProfileRequest {
   widthIn?: number
   heightIn?: number
   isDefault?: boolean
+  defaultCarrier?: string | null
+  defaultServiceToken?: string | null
 }
 
 interface RouteParams {
@@ -64,6 +66,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         ...(body.widthIn !== undefined && { widthIn: body.widthIn }),
         ...(body.heightIn !== undefined && { heightIn: body.heightIn }),
         ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
+        ...(body.defaultCarrier !== undefined && { defaultCarrier: body.defaultCarrier }),
+        ...(body.defaultServiceToken !== undefined && { defaultServiceToken: body.defaultServiceToken }),
       },
     })
 

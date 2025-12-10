@@ -11,6 +11,8 @@ interface CreateProfileRequest {
   widthIn: number
   heightIn: number
   isDefault?: boolean
+  defaultCarrier?: string | null
+  defaultServiceToken?: string | null
 }
 
 export async function GET() {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as CreateProfileRequest
-    const { name, weightOz, lengthIn, widthIn, heightIn, isDefault } = body
+    const { name, weightOz, lengthIn, widthIn, heightIn, isDefault, defaultCarrier, defaultServiceToken } = body
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -99,6 +101,8 @@ export async function POST(req: Request) {
         widthIn,
         heightIn,
         isDefault: shouldBeDefault,
+        defaultCarrier: defaultCarrier ?? null,
+        defaultServiceToken: defaultServiceToken ?? null,
       },
     })
 

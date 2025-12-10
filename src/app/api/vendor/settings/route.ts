@@ -16,7 +16,10 @@ interface UpdateSettingsRequest {
   state?: string | null
   postalCode?: string | null
   country?: string | null
+  labelFormat?: string
 }
+
+const VALID_LABEL_FORMATS = ['PDF', 'PDF_4x6', 'PDF_A4', 'PNG', 'ZPLII']
 
 export async function PATCH(req: Request) {
   try {
@@ -41,7 +44,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = (await req.json()) as UpdateSettingsRequest
-    const { storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country } = body
+    const { storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country, labelFormat } = body
 
     // Validate store name if provided
     if (storeName !== undefined) {
@@ -71,6 +74,11 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Invalid accent color format' }, { status: 400 })
     }
 
+    // Validate label format
+    if (labelFormat && !VALID_LABEL_FORMATS.includes(labelFormat)) {
+      return NextResponse.json({ error: 'Invalid label format' }, { status: 400 })
+    }
+
     // Update the vendor
     const updatedVendor = await prisma.vendor.update({
       where: { id: vendor.id },
@@ -86,6 +94,7 @@ export async function PATCH(req: Request) {
         ...(state !== undefined && { state }),
         ...(postalCode !== undefined && { postalCode }),
         ...(country !== undefined && { country }),
+        ...(labelFormat !== undefined && { labelFormat }),
       },
     })
 

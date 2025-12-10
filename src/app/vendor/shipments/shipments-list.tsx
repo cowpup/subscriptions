@@ -4,6 +4,17 @@ import { useState } from 'react'
 import { ShipmentCard } from './shipment-card'
 import { BulkActions } from './bulk-actions'
 
+interface ProductShippingProfile {
+  id: string
+  name: string
+  weightOz: number
+  lengthIn: number
+  widthIn: number
+  heightIn: number
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
+}
+
 interface OrderItem {
   id: string
   quantity: number
@@ -11,6 +22,8 @@ interface OrderItem {
   product: {
     name: string
     images: string[]
+    shippingProfileId: string | null
+    shippingProfile: ProductShippingProfile | null
   }
 }
 
@@ -54,6 +67,8 @@ interface ShippingProfile {
   widthIn: number
   heightIn: number
   isDefault: boolean
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
 }
 
 interface ShipmentsListProps {

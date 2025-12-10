@@ -95,7 +95,23 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
         items: {
           include: {
             product: {
-              select: { name: true, images: true },
+              select: {
+                name: true,
+                images: true,
+                shippingProfileId: true,
+                shippingProfile: {
+                  select: {
+                    id: true,
+                    name: true,
+                    weightOz: true,
+                    lengthIn: true,
+                    widthIn: true,
+                    heightIn: true,
+                    defaultCarrier: true,
+                    defaultServiceToken: true,
+                  },
+                },
+              },
             },
           },
         },
@@ -104,6 +120,17 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
     prisma.shippingProfile.findMany({
       where: { vendorId: vendor.id },
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        weightOz: true,
+        lengthIn: true,
+        widthIn: true,
+        heightIn: true,
+        isDefault: true,
+        defaultCarrier: true,
+        defaultServiceToken: true,
+      },
     }),
   ])
 

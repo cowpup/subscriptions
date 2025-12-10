@@ -5,6 +5,17 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { formatAmountForDisplay } from '@/lib/format'
 
+interface ProductShippingProfile {
+  id: string
+  name: string
+  weightOz: number
+  lengthIn: number
+  widthIn: number
+  heightIn: number
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
+}
+
 interface OrderItem {
   id: string
   quantity: number
@@ -12,6 +23,8 @@ interface OrderItem {
   product: {
     name: string
     images: string[]
+    shippingProfileId: string | null
+    shippingProfile: ProductShippingProfile | null
   }
 }
 
@@ -78,6 +91,8 @@ interface ShippingProfile {
   widthIn: number
   heightIn: number
   isDefault: boolean
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
 }
 
 interface ShipmentCardProps {
@@ -121,6 +136,72 @@ export function ShipmentCard({ order, shippingProfiles }: ShipmentCardProps) {
       setHeightIn(profile.heightIn.toString())
       setSelectedProfileId(profileId)
     }
+  }
+
+  // Determine if one-click shipping is available
+  // Priority: 1) Product's shipping profile with default service
+  //           2) Vendor's default profile with default service
+  const getOneClickProfile = (): ShippingProfile | ProductShippingProfile | null => {
+    // Check if any product has a shipping profile with a default service
+    for (const item of order.items) {
+      const productProfile = item.product.shippingProfile
+      if (productProfile?.defaultCarrier && productProfile?.defaultServiceToken) {
+        return productProfile
+      }
+    }
+    // Fall back to vendor's default profile with a default service
+    const vendorDefault = shippingProfiles.find(
+      (p) => p.isDefault && p.defaultCarrier && p.defaultServiceToken
+    )
+    if (vendorDefault) {
+      return vendorDefault
+    }
+    // Check any vendor profile with a default service
+    return shippingProfiles.find((p) => p.defaultCarrier && p.defaultServiceToken) ?? null
+  }
+
+  const oneClickProfile = getOneClickProfile()
+  const canOneClick = !!oneClickProfile && !!order.shippingAddress && !order.trackingNumber
+
+  const oneClickLabel = async () => {
+    if (!oneClickProfile || !oneClickProfile.defaultCarrier || !oneClickProfile.defaultServiceToken) {
+      setError('No one-click shipping profile configured')
+      return
+    }
+
+    setIsUpdating(true)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/vendor/orders/${order.id}/one-click-label`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: oneClickProfile.id,
+          carrier: oneClickProfile.defaultCarrier,
+          serviceToken: oneClickProfile.defaultServiceToken,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        error?: string
+        trackingNumber?: string
+        labelUrl?: string
+        rate?: { provider: string; service: string; amount: string }
+      }
+
+      if (!response.ok) {
+        setError(data.error ?? 'Failed to create shipping label')
+        setIsUpdating(false)
+        return
+      }
+
+      router.refresh()
+    } catch {
+      setError('Failed to create shipping label')
+    }
+
+    setIsUpdating(false)
   }
 
   const updateStatus = async (newStatus: string) => {
@@ -692,13 +773,28 @@ export function ShipmentCard({ order, shippingProfiles }: ShipmentCardProps) {
                   </button>
                 )}
 
+                {canOneClick && (
+                  <button
+                    onClick={() => void oneClickLabel()}
+                    disabled={isUpdating}
+                    className="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                    title={`${oneClickProfile?.name}: ${oneClickProfile?.defaultCarrier?.toUpperCase()} ${oneClickProfile?.defaultServiceToken}`}
+                  >
+                    {isUpdating ? 'Creating...' : `One-Click Label`}
+                  </button>
+                )}
+
                 {!order.trackingNumber && order.shippingAddress && (
                   <button
                     onClick={() => setShowShippingForm(true)}
                     disabled={isUpdating}
-                    className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
+                    className={`rounded-md px-4 py-2 text-sm disabled:opacity-50 ${
+                      canOneClick
+                        ? 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
                   >
-                    Create Shipping Label
+                    {canOneClick ? 'Manual Label' : 'Create Shipping Label'}
                   </button>
                 )}
 

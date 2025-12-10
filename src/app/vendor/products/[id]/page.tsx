@@ -28,23 +28,28 @@ export default async function EditProductPage({ params }: PageProps) {
     redirect('/vendor')
   }
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      tierAccess: {
-        include: { tier: true },
+  const [product, tiers, shippingProfiles] = await Promise.all([
+    prisma.product.findUnique({
+      where: { id },
+      include: {
+        tierAccess: {
+          include: { tier: true },
+        },
       },
-    },
-  })
+    }),
+    prisma.subscriptionTier.findMany({
+      where: { vendorId: vendor.id, isActive: true },
+      orderBy: { priceInCents: 'asc' },
+    }),
+    prisma.shippingProfile.findMany({
+      where: { vendorId: vendor.id },
+      orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+    }),
+  ])
 
   if (!product || product.vendorId !== vendor.id) {
     notFound()
   }
-
-  const tiers = await prisma.subscriptionTier.findMany({
-    where: { vendorId: vendor.id, isActive: true },
-    orderBy: { priceInCents: 'asc' },
-  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,11 +101,21 @@ export default async function EditProductPage({ params }: PageProps) {
               tierAccessIds: product.tierAccess.map((ta) => ta.tierId),
               isPreOrder: product.isPreOrder,
               preOrderShipDate: product.preOrderShipDate?.toISOString().split('T')[0] ?? null,
+              shippingProfileId: product.shippingProfileId,
             }}
             tiers={tiers.map((t) => ({
               id: t.id,
               name: t.name,
               priceInCents: t.priceInCents,
+            }))}
+            shippingProfiles={shippingProfiles.map((sp) => ({
+              id: sp.id,
+              name: sp.name,
+              weightOz: sp.weightOz,
+              lengthIn: sp.lengthIn,
+              widthIn: sp.widthIn,
+              heightIn: sp.heightIn,
+              isDefault: sp.isDefault,
             }))}
           />
         </div>

@@ -11,6 +11,8 @@ interface ShippingProfile {
   widthIn: number
   heightIn: number
   isDefault: boolean
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
 }
 
 interface ShippingRate {

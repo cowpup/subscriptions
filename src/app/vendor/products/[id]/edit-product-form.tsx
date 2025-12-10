@@ -10,6 +10,16 @@ interface Tier {
   priceInCents: number
 }
 
+interface ShippingProfile {
+  id: string
+  name: string
+  weightOz: number
+  lengthIn: number
+  widthIn: number
+  heightIn: number
+  isDefault: boolean
+}
+
 interface ProductData {
   id: string
   name: string
@@ -21,11 +31,13 @@ interface ProductData {
   tierAccessIds: string[]
   isPreOrder: boolean
   preOrderShipDate: string | null
+  shippingProfileId: string | null
 }
 
 interface EditProductFormProps {
   product: ProductData
   tiers: Tier[]
+  shippingProfiles: ShippingProfile[]
 }
 
 interface ApiResponse {
@@ -33,7 +45,7 @@ interface ApiResponse {
   product?: unknown
 }
 
-export function EditProductForm({ product, tiers }: EditProductFormProps) {
+export function EditProductForm({ product, tiers, shippingProfiles }: EditProductFormProps) {
   const router = useRouter()
   const [name, setName] = useState(product.name)
   const [description, setDescription] = useState(product.description ?? '')
@@ -46,6 +58,7 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
   const [selectedTiers, setSelectedTiers] = useState<string[]>(product.tierAccessIds)
   const [isPreOrder, setIsPreOrder] = useState(product.isPreOrder)
   const [preOrderShipDate, setPreOrderShipDate] = useState(product.preOrderShipDate ?? '')
+  const [shippingProfileId, setShippingProfileId] = useState(product.shippingProfileId ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -100,6 +113,7 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
             tierIds: selectedTiers,
             isPreOrder,
             preOrderShipDate: isPreOrder && preOrderShipDate ? new Date(preOrderShipDate).toISOString() : null,
+            shippingProfileId: shippingProfileId || null,
           }),
         })
 
@@ -119,7 +133,7 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
         setIsSubmitting(false)
       }
     },
-    [name, description, price, imageUrl, stockQuantity, isActive, selectedTiers, isPreOrder, preOrderShipDate, product.id, router]
+    [name, description, price, imageUrl, stockQuantity, isActive, selectedTiers, isPreOrder, preOrderShipDate, shippingProfileId, product.id, router]
   )
 
   const handleDelete = useCallback(async () => {
@@ -307,6 +321,39 @@ export function EditProductForm({ product, tiers }: EditProductFormProps) {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
             />
           </div>
+        )}
+      </div>
+
+      {/* Shipping Profile */}
+      <div>
+        <label htmlFor="shippingProfile" className="block text-sm font-medium text-gray-700">
+          Shipping Profile
+        </label>
+        <p className="text-xs text-gray-500">
+          Assign a shipping profile for one-click label generation.
+        </p>
+        {shippingProfiles.length > 0 ? (
+          <select
+            id="shippingProfile"
+            value={shippingProfileId}
+            onChange={(e) => setShippingProfileId(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          >
+            <option value="">No profile (manual entry)</option>
+            {shippingProfiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>
+                {profile.name} ({profile.weightOz}oz, {profile.lengthIn}×{profile.widthIn}×{profile.heightIn}in)
+                {profile.isDefault && ' - Default'}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="mt-1 text-sm text-gray-500">
+            No shipping profiles yet.{' '}
+            <Link href="/vendor/settings" className="text-black underline hover:no-underline">
+              Create one in Settings
+            </Link>
+          </p>
         )}
       </div>
 

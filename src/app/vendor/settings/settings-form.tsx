@@ -17,7 +17,16 @@ interface VendorData {
   state: string | null
   postalCode: string | null
   country: string | null
+  labelFormat: string
 }
+
+const LABEL_FORMATS = [
+  { value: 'PDF_4x6', label: '4" x 6" (Thermal Printer)', description: 'Standard label size for thermal printers' },
+  { value: 'PDF', label: '8.5" x 11" (Standard Paper)', description: 'Full page PDF for regular printers' },
+  { value: 'PDF_A4', label: 'A4 Paper', description: 'International paper size' },
+  { value: 'PNG', label: 'PNG Image', description: 'Image file format' },
+  { value: 'ZPLII', label: 'ZPL (Zebra)', description: 'For Zebra thermal printers' },
+]
 
 interface VendorSettingsFormProps {
   vendor: VendorData
@@ -43,6 +52,9 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
   const [state, setState] = useState(vendor.state ?? '')
   const [postalCode, setPostalCode] = useState(vendor.postalCode ?? '')
   const [country, setCountry] = useState(vendor.country ?? 'US')
+
+  // Shipping preferences
+  const [labelFormat, setLabelFormat] = useState(vendor.labelFormat)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -71,6 +83,7 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
             state: state.trim() || null,
             postalCode: postalCode.trim() || null,
             country: country.trim() || null,
+            labelFormat,
           }),
         })
 
@@ -90,7 +103,7 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
         setIsSubmitting(false)
       }
     },
-    [storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country, router]
+    [storeName, description, logoUrl, bannerUrl, accentColor, street1, street2, city, state, postalCode, country, labelFormat, router]
   )
 
   return (
@@ -345,6 +358,34 @@ export function VendorSettingsForm({ vendor }: VendorSettingsFormProps) {
               </select>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-white p-6">
+        <h2 className="font-semibold">Shipping Preferences</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Configure how shipping labels are generated.
+        </p>
+
+        <div className="mt-4">
+          <label htmlFor="labelFormat" className="block text-sm font-medium text-gray-700">
+            Label Format
+          </label>
+          <select
+            id="labelFormat"
+            value={labelFormat}
+            onChange={(e) => setLabelFormat(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          >
+            {LABEL_FORMATS.map((format) => (
+              <option key={format.value} value={format.value}>
+                {format.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            {LABEL_FORMATS.find((f) => f.value === labelFormat)?.description}
+          </p>
         </div>
       </div>
 

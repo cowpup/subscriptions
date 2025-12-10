@@ -11,7 +11,22 @@ interface ShippingProfile {
   widthIn: number
   heightIn: number
   isDefault: boolean
+  defaultCarrier: string | null
+  defaultServiceToken: string | null
 }
+
+const SHIPPING_SERVICES = [
+  { carrier: 'usps', token: 'usps_priority', label: 'USPS Priority Mail' },
+  { carrier: 'usps', token: 'usps_ground_advantage', label: 'USPS Ground Advantage' },
+  { carrier: 'usps', token: 'usps_first', label: 'USPS First Class' },
+  { carrier: 'usps', token: 'usps_parcel_select', label: 'USPS Parcel Select' },
+  { carrier: 'ups', token: 'ups_ground', label: 'UPS Ground' },
+  { carrier: 'ups', token: 'ups_next_day_air', label: 'UPS Next Day Air' },
+  { carrier: 'ups', token: 'ups_2nd_day_air', label: 'UPS 2nd Day Air' },
+  { carrier: 'fedex', token: 'fedex_ground', label: 'FedEx Ground' },
+  { carrier: 'fedex', token: 'fedex_express_saver', label: 'FedEx Express Saver' },
+  { carrier: 'fedex', token: 'fedex_2day', label: 'FedEx 2Day' },
+]
 
 interface ShippingProfilesProps {
   profiles: ShippingProfile[]
@@ -31,6 +46,7 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
   const [widthIn, setWidthIn] = useState('')
   const [heightIn, setHeightIn] = useState('')
   const [isDefault, setIsDefault] = useState(false)
+  const [defaultService, setDefaultService] = useState('')
 
   const resetForm = () => {
     setName('')
@@ -39,6 +55,7 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
     setWidthIn('')
     setHeightIn('')
     setIsDefault(false)
+    setDefaultService('')
     setIsAdding(false)
     setError('')
   }
@@ -52,6 +69,8 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
     setIsSubmitting(true)
     setError('')
 
+    const selectedService = SHIPPING_SERVICES.find((s) => s.token === defaultService)
+
     try {
       const response = await fetch('/api/vendor/shipping-profiles', {
         method: 'POST',
@@ -63,6 +82,8 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
           widthIn: parseFloat(widthIn),
           heightIn: parseFloat(heightIn),
           isDefault,
+          defaultCarrier: selectedService?.carrier ?? null,
+          defaultServiceToken: selectedService?.token ?? null,
         }),
       })
 
@@ -92,7 +113,7 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
     }
 
     setIsSubmitting(false)
-  }, [name, weightOz, lengthIn, widthIn, heightIn, isDefault, router])
+  }, [name, weightOz, lengthIn, widthIn, heightIn, isDefault, defaultService, router])
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -226,6 +247,34 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-xs text-gray-600">Default Shipping Method (for one-click)</label>
+              <select
+                value={defaultService}
+                onChange={(e) => setDefaultService(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              >
+                <option value="">None (manual selection)</option>
+                <optgroup label="USPS">
+                  {SHIPPING_SERVICES.filter((s) => s.carrier === 'usps').map((s) => (
+                    <option key={s.token} value={s.token}>{s.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="UPS">
+                  {SHIPPING_SERVICES.filter((s) => s.carrier === 'ups').map((s) => (
+                    <option key={s.token} value={s.token}>{s.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="FedEx">
+                  {SHIPPING_SERVICES.filter((s) => s.carrier === 'fedex').map((s) => (
+                    <option key={s.token} value={s.token}>{s.label}</option>
+                  ))}
+                </optgroup>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Enables one-click label purchase using this service
+              </p>
+            </div>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -274,6 +323,11 @@ export function ShippingProfiles({ profiles: initialProfiles }: ShippingProfiles
                 <p className="text-sm text-gray-600">
                   {profile.weightOz}oz • {profile.lengthIn}&quot; × {profile.widthIn}&quot; × {profile.heightIn}&quot;
                 </p>
+                {profile.defaultServiceToken && (
+                  <p className="text-xs text-indigo-600">
+                    One-click: {SHIPPING_SERVICES.find((s) => s.token === profile.defaultServiceToken)?.label ?? profile.defaultServiceToken}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {!profile.isDefault && (
