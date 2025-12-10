@@ -299,7 +299,7 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                 return (
                   <div
                     key={tier.id}
-                    className={`rounded-lg border bg-white p-5 shadow-sm ${
+                    className={`flex flex-col rounded-lg border bg-white p-5 shadow-sm ${
                       isCurrentTier ? 'ring-2 ring-black' : ''
                     } ${isUpgrade ? 'border-green-200 bg-green-50/30' : ''}`}
                   >
@@ -342,7 +342,7 @@ export default async function VendorStorefrontPage({ params, searchParams }: Pag
                       </ul>
                     )}
 
-                    <div className="mt-4">
+                    <div className="mt-auto pt-4">
                       <SignedIn>
                         {isCurrentTier ? (
                           <button
