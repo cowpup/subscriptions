@@ -74,3 +74,21 @@ Tasks ordered by priority. Work top-down unless blocked.
 - Creator payouts dashboard
 - Affiliate/referral system
 - Community features (comments, posts)
+
+## UX Improvements (User Feedback 2025-12-10)
+
+### Address Management
+- [ ] Move "Manage Addresses" to profile menu dropdown, not prominent page link
+- [ ] Show current address at top, expandable "Add New Address" carrot below
+- [ ] Consider Stripe Checkout in modal overlay instead of full redirect
+
+### Shipping Flow Overhaul (High Priority)
+- [ ] Attach shipping profiles to products (not entered per-order)
+- [ ] Default shipping method per profile (USPS Priority, Ground Advantage, UPS Ground, etc.)
+- [ ] Streamline flow: current is too long for high-volume sellers
+- [ ] One-click label generation using product's attached profile + default method
+- [ ] Label format options: 8.5x11 OR 4x6 thermal (Shippo API setting)
+- [ ] Consider shipment size/weight limits before requiring split shipment
+
+### Subscriber Dashboard
+- [ ] Separate tabs for Active vs Inactive subscriptions
