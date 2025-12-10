@@ -40,6 +40,11 @@ export default async function DashboardPage() {
             href="/dashboard/addresses"
           />
           <DashboardCard
+            title="Notifications"
+            description="Configure your notification preferences"
+            href="/dashboard/notifications"
+          />
+          <DashboardCard
             title="Browse Creators"
             description="Discover new creators to subscribe to"
             href="/creators"

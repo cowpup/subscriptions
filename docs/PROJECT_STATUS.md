@@ -59,6 +59,7 @@
 - View and purchase products (subscription-gated)
 - Tier-based product access
 - **Order history page** with tracking numbers, pre-order badges, shipping addresses
+- **Notification preferences** page for email and push notification settings
 
 ### Orders System
 - Order and OrderItem models
@@ -141,6 +142,7 @@
 | `/dashboard/subscriptions` | Active subscriptions with cancel |
 | `/dashboard/addresses` | Shipping address management |
 | `/dashboard/orders` | Subscriber order history |
+| `/dashboard/notifications` | Notification preferences |
 | `/dashboard/become-creator` | Vendor application |
 | `/vendor` | Vendor dashboard |
 | `/vendor/tiers` | Manage subscription tiers |

@@ -58,7 +58,7 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] Purchase products
 - [x] Upgrade/downgrade subscription tiers
 - [x] Order history page
-- [ ] Notification preferences
+- [x] Notification preferences
 - [ ] Giveaway entry system
 
 ## Priority 6: Advanced Features
