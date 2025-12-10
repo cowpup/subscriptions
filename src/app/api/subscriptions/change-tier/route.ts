@@ -72,10 +72,34 @@ export async function POST(req: Request) {
 
     const isUpgrade = newTier.priceInCents > currentSubscription.tier.priceInCents
 
+    // Ensure user has a Stripe customer ID
+    if (!user.stripeCustomerId) {
+      return NextResponse.json({ error: 'No payment method on file. Please subscribe through checkout first.' }, { status: 400 })
+    }
+
     // Get the Stripe subscription
-    const stripeSubscription = await stripe.subscriptions.retrieve(
-      currentSubscription.stripeSubscriptionId
-    )
+    let stripeSubscription
+    try {
+      stripeSubscription = await stripe.subscriptions.retrieve(
+        currentSubscription.stripeSubscriptionId
+      )
+    } catch (stripeError) {
+      // Subscription doesn't exist in Stripe - mark as cancelled locally
+      if (stripeError instanceof Error && stripeError.message.includes('No such subscription')) {
+        await prisma.subscription.update({
+          where: { id: currentSubscriptionId },
+          data: {
+            status: 'CANCELLED',
+            stripeSubscriptionId: null,
+          },
+        })
+        return NextResponse.json({
+          error: 'Your subscription is no longer active. Please subscribe again.',
+          redirect: `/${currentSubscription.tier.vendor.slug}`,
+        }, { status: 400 })
+      }
+      throw stripeError
+    }
 
     if (isUpgrade) {
       // Upgrade: Cancel current subscription immediately and start new one
@@ -86,7 +110,7 @@ export async function POST(req: Request) {
 
       // Create new subscription checkout
       const session = await stripe.checkout.sessions.create({
-        customer: user.stripeCustomerId!,
+        customer: user.stripeCustomerId,
         mode: 'subscription',
         payment_method_types: ['card'],
         line_items: [
@@ -151,6 +175,7 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error('Error changing tier:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: `Failed to change tier: ${message}` }, { status: 500 })
   }
 }
