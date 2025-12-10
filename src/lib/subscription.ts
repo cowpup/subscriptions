@@ -53,11 +53,18 @@ export async function getSubscriptionForVendor(
   userId: string,
   vendorId: string
 ): Promise<SubscriptionWithTier | null> {
+  const now = new Date()
+
   return prisma.subscription.findFirst({
     where: {
       userId,
       tier: {
         vendorId,
+      },
+      // Only return subscriptions that are active and have valid access
+      status: 'ACTIVE',
+      accessExpiresAt: {
+        gt: now,
       },
     },
     include: {
