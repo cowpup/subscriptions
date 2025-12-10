@@ -83,23 +83,29 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
     orderBy = { user: { name: order as Prisma.SortOrder } }
   }
 
-  const orders = await prisma.order.findMany({
-    where,
-    orderBy,
-    include: {
-      user: {
-        select: { name: true, email: true },
-      },
-      shippingAddress: true,
-      items: {
-        include: {
-          product: {
-            select: { name: true, images: true },
+  const [orders, shippingProfiles] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy,
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+        shippingAddress: true,
+        items: {
+          include: {
+            product: {
+              select: { name: true, images: true },
+            },
           },
         },
       },
-    },
-  })
+    }),
+    prisma.shippingProfile.findMany({
+      where: { vendorId: vendor.id },
+      orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+    }),
+  ])
 
   // Transform orders to include all shipping-related fields
   const ordersWithShipping = orders.map((order) => ({
@@ -208,7 +214,7 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
         ) : (
           <div className="mt-6 space-y-4">
             {ordersWithShipping.map((order) => (
-              <ShipmentCard key={order.id} order={order} />
+              <ShipmentCard key={order.id} order={order} shippingProfiles={shippingProfiles} />
             ))}
           </div>
         )}

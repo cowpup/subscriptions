@@ -120,14 +120,34 @@ model Vendor {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tiers       SubscriptionTier[]
-  products    Product[]
-  giveaways   Giveaway[]
-  promoCodes  PromoCode[]
-  orders      Order[]
+  tiers            SubscriptionTier[]
+  products         Product[]
+  giveaways        Giveaway[]
+  promoCodes       PromoCode[]
+  orders           Order[]
+  shippingProfiles ShippingProfile[]
 
   @@index([slug])
   @@index([status])
+}
+
+model ShippingProfile {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  name     String  // e.g., "Small Box", "Large Envelope", "Poster Tube"
+  weightOz Float
+  lengthIn Float
+  widthIn  Float
+  heightIn Float
+
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vendorId, name])
+  @@index([vendorId])
 }
 
 enum VendorStatus {

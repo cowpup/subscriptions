@@ -3,7 +3,9 @@ import Link from 'next/link'
 import { UserButton } from '@clerk/nextjs'
 import { getCurrentUser } from '@/lib/auth'
 import { getVendorByUserId } from '@/lib/vendor'
+import { prisma } from '@/lib/prisma'
 import { VendorSettingsForm } from './settings-form'
+import { ShippingProfiles } from './shipping-profiles'
 
 export default async function VendorSettingsPage() {
   const user = await getCurrentUser()
@@ -21,6 +23,11 @@ export default async function VendorSettingsPage() {
   if (vendor.status !== 'APPROVED') {
     redirect('/vendor')
   }
+
+  const shippingProfiles = await prisma.shippingProfile.findMany({
+    where: { vendorId: vendor.id },
+    orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -76,6 +83,10 @@ export default async function VendorSettingsPage() {
             country: vendor.country,
           }}
         />
+
+        <div className="mt-8">
+          <ShippingProfiles profiles={shippingProfiles} />
+        </div>
       </main>
     </div>
   )

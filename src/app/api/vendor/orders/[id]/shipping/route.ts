@@ -125,7 +125,8 @@ export async function POST(req: Request, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Error getting shipping rates:', error)
-    return NextResponse.json({ error: 'Failed to get shipping rates' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: `Failed to get shipping rates: ${message}` }, { status: 500 })
   }
 }
 
@@ -191,6 +192,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Error purchasing shipping label:', error)
-    return NextResponse.json({ error: 'Failed to purchase shipping label' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: `Failed to purchase shipping label: ${message}` }, { status: 500 })
   }
 }

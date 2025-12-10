@@ -42,10 +42,10 @@ interface Order {
   id: string
   status: string
   totalInCents: number
-  createdAt: Date
+  createdAt: string | Date
   notes: string | null
   isPreOrder: boolean
-  preOrderShipDate: Date | null
+  preOrderShipDate: string | Date | null
   trackingNumber: string | null
   shippingLabelUrl: string | null
   weightOz: number | null
@@ -70,11 +70,22 @@ const statusColors: Record<string, string> = {
   REFUNDED: 'bg-gray-100 text-gray-800',
 }
 
-interface ShipmentCardProps {
-  order: Order
+interface ShippingProfile {
+  id: string
+  name: string
+  weightOz: number
+  lengthIn: number
+  widthIn: number
+  heightIn: number
+  isDefault: boolean
 }
 
-export function ShipmentCard({ order }: ShipmentCardProps) {
+interface ShipmentCardProps {
+  order: Order
+  shippingProfiles: ShippingProfile[]
+}
+
+export function ShipmentCard({ order, shippingProfiles }: ShipmentCardProps) {
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
   const [showShippingForm, setShowShippingForm] = useState(false)
@@ -82,13 +93,15 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
   const [showRates, setShowRates] = useState(false)
   const [rates, setRates] = useState<ShippingRate[]>([])
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null)
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('')
   const [error, setError] = useState('')
 
-  // Package dimensions form
-  const [weightOz, setWeightOz] = useState(order.weightOz?.toString() ?? '')
-  const [lengthIn, setLengthIn] = useState(order.lengthIn?.toString() ?? '')
-  const [widthIn, setWidthIn] = useState(order.widthIn?.toString() ?? '')
-  const [heightIn, setHeightIn] = useState(order.heightIn?.toString() ?? '')
+  // Package dimensions form - initialize from default profile if exists
+  const defaultProfile = shippingProfiles.find((p) => p.isDefault)
+  const [weightOz, setWeightOz] = useState(order.weightOz?.toString() ?? defaultProfile?.weightOz.toString() ?? '')
+  const [lengthIn, setLengthIn] = useState(order.lengthIn?.toString() ?? defaultProfile?.lengthIn.toString() ?? '')
+  const [widthIn, setWidthIn] = useState(order.widthIn?.toString() ?? defaultProfile?.widthIn.toString() ?? '')
+  const [heightIn, setHeightIn] = useState(order.heightIn?.toString() ?? defaultProfile?.heightIn.toString() ?? '')
 
   // Manual address form
   const [addrName, setAddrName] = useState('')
@@ -98,6 +111,17 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
   const [addrState, setAddrState] = useState('')
   const [addrPostalCode, setAddrPostalCode] = useState('')
   const [addrCountry, setAddrCountry] = useState('US')
+
+  const applyProfile = (profileId: string) => {
+    const profile = shippingProfiles.find((p) => p.id === profileId)
+    if (profile) {
+      setWeightOz(profile.weightOz.toString())
+      setLengthIn(profile.lengthIn.toString())
+      setWidthIn(profile.widthIn.toString())
+      setHeightIn(profile.heightIn.toString())
+      setSelectedProfileId(profileId)
+    }
+  }
 
   const updateStatus = async (newStatus: string) => {
     setIsUpdating(true)
@@ -240,6 +264,26 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
 
   const isAwaiting = order.status === 'PAID' || order.status === 'PROCESSING'
 
+  // Format dates consistently to avoid hydration mismatch
+  const formatDate = (date: string | Date) => {
+    const d = new Date(date)
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC'
+    })
+  }
+
+  const formatTime = (date: string | Date) => {
+    const d = new Date(date)
+    return d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC'
+    })
+  }
+
   return (
     <div className="rounded-lg border bg-white shadow-sm">
       <div className="border-b p-4">
@@ -263,12 +307,11 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
               )}
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              {new Date(order.createdAt).toLocaleDateString()} at{' '}
-              {new Date(order.createdAt).toLocaleTimeString()}
+              {formatDate(order.createdAt)} at {formatTime(order.createdAt)}
             </p>
             {order.isPreOrder && order.preOrderShipDate && (
               <p className="mt-1 text-xs text-blue-600">
-                Ship by: {new Date(order.preOrderShipDate).toLocaleDateString()}
+                Ship by: {formatDate(order.preOrderShipDate)}
               </p>
             )}
           </div>
@@ -484,6 +527,26 @@ export function ShipmentCard({ order }: ShipmentCardProps) {
         {showShippingForm && (
           <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4">
             <h4 className="text-sm font-medium text-gray-700">Package Dimensions</h4>
+
+            {/* Profile Selector */}
+            {shippingProfiles.length > 0 && (
+              <div className="mt-3">
+                <label className="block text-xs text-gray-600">Quick Fill from Profile</label>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => applyProfile(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                >
+                  <option value="">Select a profile...</option>
+                  {shippingProfiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.name} ({profile.weightOz}oz, {profile.lengthIn}x{profile.widthIn}x{profile.heightIn}in)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
                 <label className="block text-xs text-gray-600">Weight (oz)</label>
