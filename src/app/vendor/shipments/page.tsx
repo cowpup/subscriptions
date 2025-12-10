@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { getVendorByUserId } from '@/lib/vendor'
 import { prisma } from '@/lib/prisma'
 import { ShipmentTabs } from './shipment-tabs'
-import { ShipmentCard } from './shipment-card'
+import { ShipmentsList } from './shipments-list'
 import { Prisma } from '@prisma/client'
 
 interface PageProps {
@@ -212,11 +212,11 @@ export default async function VendorShipmentsPage({ searchParams }: PageProps) {
             </p>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
-            {ordersWithShipping.map((order) => (
-              <ShipmentCard key={order.id} order={order} shippingProfiles={shippingProfiles} />
-            ))}
-          </div>
+          <ShipmentsList
+            orders={ordersWithShipping}
+            shippingProfiles={shippingProfiles}
+            tab={tab}
+          />
         )}
       </main>
     </div>
