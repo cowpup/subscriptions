@@ -1,17 +1,18 @@
 # Project Status
 
-**Last Updated:** 2025-12-09
+**Last Updated:** 2025-12-10
 **Updated By:** Agent
 
 ---
 
 ## Current State
 
-**Shipping address management and bulk label printing complete.** Users can save shipping addresses that auto-populate in Stripe Checkout. Vendors can create shipping profiles for common package sizes and bulk-print labels for multiple orders at once. All shipping functionality now production-ready. Live at subr.net.
+**Vendor analytics dashboard complete.** Interactive charts for subscriber growth, revenue trends, and tier distribution. Analytics snippet on vendor dashboard serves as teaser. Multiple bug fixes for subscription handling and product purchase webhook. Live at subr.net.
 
 ## In Progress
 
-- Basic analytics for vendors (subscriber count, revenue charts)
+- Testing product purchase flow end-to-end
+- Improving product purchase UX (success page redirect)
 
 ## Recently Completed
 
@@ -104,13 +105,30 @@
 - Product card images now fit uncropped (object-contain)
 - Vendor Hub button in header for approved vendors
 - Header component with conditional vendor link
+- **Tier cards equal height** with buttons aligned at bottom
+
+### Vendor Analytics (NEW)
+- **Analytics dashboard** at `/vendor/analytics`
+- Interactive subscriber growth chart (6-month trend)
+- Interactive revenue chart (6-month trend)
+- Subscriber distribution pie chart by tier
+- Revenue by tier horizontal bar chart
+- **Analytics snippet** on vendor dashboard as teaser
+- Real data populating all vendor dashboard stats
+- Time-based metrics (this month vs last month comparisons)
+
+### Bug Fixes (2025-12-10)
+- Fixed `getSubscriptionForVendor()` returning cancelled subscriptions
+- Fixed stale Stripe subscription ID handling in tier change
+- Fixed `shipping_details` expand error in product purchase webhook
+- Cleaned up orphaned subscription records
 
 ## Upcoming Priorities
 
-1. Basic analytics for vendors (subscriber count, revenue charts)
-2. Order history for subscribers
-3. Giveaway system
-4. Email notifications
+1. Order history for subscribers
+2. Giveaway system
+3. Email notifications
+4. Product purchase flow improvements
 
 ## Key Routes
 
@@ -133,6 +151,7 @@
 | `/vendor/orders` | Order management with filters |
 | `/vendor/shipments` | Shipment tracking with Shippo labels |
 | `/vendor/subscribers` | Subscriber management |
+| `/vendor/analytics` | Interactive analytics dashboard |
 | `/vendor/settings` | Storefront customization + return address |
 | `/admin` | Admin dashboard |
 | `/admin/vendors` | Review vendor applications |
