@@ -3,6 +3,8 @@ import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
 import { getVendorByUserId } from '@/lib/vendor'
+import { getAnalyticsSnippet } from '@/lib/analytics'
+import { prisma } from '@/lib/prisma'
 
 export default async function VendorDashboardPage() {
   const user = await getCurrentUser()
@@ -26,6 +28,17 @@ export default async function VendorDashboardPage() {
     return <RejectedPage storeName={vendor.storeName} reason={vendor.rejectionReason} />
   }
 
+  // Fetch analytics and counts
+  const [analytics, productCount, giveawayCount, tierCount, hasReturnAddress] = await Promise.all([
+    getAnalyticsSnippet(vendor.id),
+    prisma.product.count({ where: { vendorId: vendor.id, isActive: true } }),
+    prisma.giveaway.count({
+      where: { vendorId: vendor.id, isActive: true, endsAt: { gte: new Date() } },
+    }),
+    prisma.subscriptionTier.count({ where: { vendorId: vendor.id, isActive: true } }),
+    Promise.resolve(Boolean(vendor.street1 && vendor.city && vendor.state && vendor.postalCode)),
+  ])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
@@ -44,14 +57,17 @@ export default async function VendorDashboardPage() {
               <Link href="/vendor/orders" className="text-gray-600 hover:text-black">
                 Orders
               </Link>
+              <Link href="/vendor/shipments" className="text-gray-600 hover:text-black">
+                Shipments
+              </Link>
               <Link href="/vendor/subscribers" className="text-gray-600 hover:text-black">
                 Subscribers
               </Link>
+              <Link href="/vendor/analytics" className="text-gray-600 hover:text-black">
+                Analytics
+              </Link>
               <Link href="/vendor/tiers" className="text-gray-600 hover:text-black">
                 Tiers
-              </Link>
-              <Link href="/vendor/giveaways" className="text-gray-600 hover:text-black">
-                Giveaways
               </Link>
               <Link href="/vendor/settings" className="text-gray-600 hover:text-black">
                 Settings
@@ -77,11 +93,57 @@ export default async function VendorDashboardPage() {
           <p className="text-gray-600">subr.net/{vendor.slug}</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Subscribers" value="0" />
-          <StatCard title="Monthly Revenue" value="$0" />
-          <StatCard title="Products" value="0" />
-          <StatCard title="Active Giveaways" value="0" />
+        {/* Analytics Snippet - Clickable teaser */}
+        <Link href="/vendor/analytics" className="group block">
+          <div className="rounded-lg border bg-gradient-to-r from-indigo-50 to-purple-50 p-6 transition-shadow hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-indigo-900">Your Performance</h2>
+              <span className="text-sm text-indigo-600 group-hover:underline">
+                View Analytics →
+              </span>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-sm text-gray-600">Active Subscribers</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  {analytics.activeSubscribers}
+                  {analytics.subscriberChange !== 0 && (
+                    <span
+                      className={`ml-2 text-sm font-normal ${
+                        analytics.subscriberChange > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {analytics.subscriberChange > 0 ? '+' : ''}
+                      {analytics.subscriberChange}%
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Revenue This Month</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  ${analytics.revenueThisMonth.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Awaiting Shipment</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  {analytics.ordersAwaitingShipment}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Stat Cards */}
+        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard title="Subscribers" value={analytics.activeSubscribers.toString()} />
+          <StatCard
+            title="Monthly Revenue"
+            value={`$${analytics.revenueThisMonth.toLocaleString()}`}
+          />
+          <StatCard title="Products" value={productCount.toString()} />
+          <StatCard title="Active Giveaways" value={giveawayCount.toString()} />
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -90,7 +152,7 @@ export default async function VendorDashboardPage() {
             <div className="mt-4 space-y-2">
               <QuickActionLink href="/vendor/tiers/new" label="Create Subscription Tier" />
               <QuickActionLink href="/vendor/products/new" label="Add Product" />
-              <QuickActionLink href="/vendor/giveaways/new" label="Start Giveaway" />
+              <QuickActionLink href="/vendor/shipments" label="Manage Shipments" />
               <QuickActionLink href="/vendor/settings" label="Customize Storefront" />
             </div>
           </div>
@@ -98,10 +160,10 @@ export default async function VendorDashboardPage() {
           <div className="rounded-lg border bg-white p-6">
             <h2 className="font-semibold">Getting Started</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <ChecklistItem done={false} label="Create your first subscription tier" />
-              <ChecklistItem done={false} label="Add products to your inventory" />
-              <ChecklistItem done={false} label="Connect your Stripe account" />
-              <ChecklistItem done={false} label="Customize your storefront" />
+              <ChecklistItem done={tierCount > 0} label="Create your first subscription tier" />
+              <ChecklistItem done={productCount > 0} label="Add products to your inventory" />
+              <ChecklistItem done={hasReturnAddress} label="Set up return address for shipping" />
+              <ChecklistItem done={Boolean(vendor.logoUrl)} label="Customize your storefront" />
             </div>
           </div>
         </div>
