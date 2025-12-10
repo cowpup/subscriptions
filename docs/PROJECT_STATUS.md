@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2025-12-10
+**Last Updated:** 2025-12-09
 **Updated By:** Agent
 
 ---
@@ -58,6 +58,7 @@
 - Cancel subscriptions (maintains 31-day access)
 - View and purchase products (subscription-gated)
 - Tier-based product access
+- **Order history page** with tracking numbers, pre-order badges, shipping addresses
 
 ### Orders System
 - Order and OrderItem models

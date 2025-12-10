@@ -57,7 +57,7 @@ Tasks ordered by priority. Work top-down unless blocked.
 - [x] View vendor inventory (gated by subscription)
 - [x] Purchase products
 - [x] Upgrade/downgrade subscription tiers
-- [ ] Order history page
+- [x] Order history page
 - [ ] Notification preferences
 - [ ] Giveaway entry system
 

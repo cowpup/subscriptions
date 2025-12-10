@@ -47,6 +47,9 @@ export default async function OrdersPage() {
           },
         },
       },
+      shippingAddress: {
+        select: { name: true, line1: true, line2: true, city: true, state: true, postalCode: true },
+      },
     },
   })
 
@@ -148,6 +151,45 @@ export default async function OrdersPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Tracking Information */}
+                {order.trackingNumber && (
+                  <div className="mt-3 border-t pt-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-500">Tracking:</span>
+                      <a
+                        href={`https://parcelsapp.com/en/tracking/${order.trackingNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-blue-600 hover:underline"
+                      >
+                        {order.trackingNumber}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pre-order Badge */}
+                {order.isPreOrder && order.preOrderShipDate && (
+                  <div className="mt-3 border-t pt-3">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800">
+                      Pre-order - Ships {order.preOrderShipDate.toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Shipping Address */}
+                {order.shippingAddress && (
+                  <div className="mt-3 border-t pt-3 text-sm text-gray-500">
+                    <p className="font-medium text-gray-700">Shipping to:</p>
+                    <p>{order.shippingAddress.name}</p>
+                    <p>{order.shippingAddress.line1}</p>
+                    {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
+                    <p>
+                      {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                    </p>
+                  </div>
+                )}
 
                 {order.notes && (
                   <p className="mt-3 text-sm text-gray-600 border-t pt-3">
